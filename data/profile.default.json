@@ -1,0 +1,167 @@
+{
+  "version": 2,
+  "activeProfileId": "default",
+  "profiles": [
+    {
+      "id": "default",
+      "label": "My Profile",
+      "personal": {
+        "firstName": "",
+        "lastName": "",
+        "middleName": "",
+        "preferredName": "",
+        "email": "",
+        "alternateEmail": "",
+        "phone": "",
+        "whatsapp": "",
+        "address1": "",
+        "address2": "",
+        "currentAddress": "",
+        "permanentAddress": "",
+        "city": "",
+        "state": "",
+        "zip": "",
+        "country": "",
+        "dateOfBirth": "",
+        "gender": "",
+        "nationality": "",
+        "pronouns": "",
+        "maritalStatus": "",
+        "cnic": "",
+        "veteranStatus": "",
+        "disabilityStatus": "",
+        "ethnicity": "",
+        "emergencyContactName": "",
+        "emergencyContactPhone": ""
+      },
+      "links": {
+        "linkedin": "",
+        "github": "",
+        "portfolio": "",
+        "website": "",
+        "twitter": "",
+        "stackoverflow": "",
+        "dribbble": "",
+        "behance": "",
+        "medium": ""
+      },
+      "professional": {
+        "currentTitle": "",
+        "currentCompany": "",
+        "summary": "",
+        "careerObjective": "",
+        "portfolioSummary": "",
+        "experienceYears": "",
+        "totalExperienceMonths": "",
+        "frontendExperienceYears": "",
+        "reactExperienceYears": "",
+        "wordpressExperienceYears": "",
+        "shopifyExperienceYears": "",
+        "skills": "",
+        "languages": [],
+        "tools": [],
+        "resumeUrl": "",
+        "cvUrl": "",
+        "upworkUrl": "",
+        "employmentStatus": "",
+        "desiredJobType": "",
+        "preferredWorkMode": "",
+        "preferredLocations": "",
+        "remotePreference": "Remote",
+        "availableStartDate": "",
+        "expectedJoiningDate": "",
+        "noticePeriod": "",
+        "currentSalary": "",
+        "lastDrawnSalary": "",
+        "desiredSalary": "",
+        "minimumExpectedSalary": "",
+        "preferredSalaryRange": "",
+        "salaryCurrency": "",
+        "salaryNegotiable": "",
+        "willingToRelocate": "Yes",
+        "openToContract": "",
+        "openToFreelance": "",
+        "managementExperience": "",
+        "achievements": "",
+        "reasonForLeaving": "",
+        "whyJoinCompany": "",
+        "references": "",
+        "availabilityForInterview": "",
+        "timezone": "",
+        "workAuthorization": "",
+        "needsSponsorship": "No",
+        "securityClearance": "",
+        "linkedinHeadline": "",
+        "coverLetter": ""
+      },
+      "experience": [
+        {
+          "company": "",
+          "title": "",
+          "employmentType": "",
+          "location": "",
+          "startDate": "",
+          "endDate": "",
+          "description": ""
+        }
+      ],
+      "education": [
+        {
+          "school": "",
+          "degree": "",
+          "fieldOfStudy": "",
+          "startYear": "",
+          "endYear": "",
+          "location": "",
+          "gpa": ""
+        }
+      ],
+      "projects": [
+        {
+          "name": "",
+          "role": "",
+          "description": "",
+          "technologies": [],
+          "url": "",
+          "github": "",
+          "startDate": "",
+          "endDate": ""
+        }
+      ],
+      "certifications": [
+        {
+          "name": "",
+          "issuer": "",
+          "issueDate": "",
+          "expiryDate": "",
+          "credentialId": "",
+          "credentialUrl": ""
+        }
+      ],
+      "awards": [
+        {
+          "title": "",
+          "issuer": "",
+          "date": "",
+          "description": ""
+        }
+      ],
+      "volunteering": [
+        {
+          "organization": "",
+          "role": "",
+          "startDate": "",
+          "endDate": "",
+          "description": ""
+        }
+      ],
+      "customFields": [
+        {
+          "label": "",
+          "match": "",
+          "value": ""
+        }
+      ]
+    }
+  ]
+}

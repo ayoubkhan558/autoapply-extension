@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>AutoApply Settings</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar__brand">
+        <img class="sidebar__logo" src="../icons/icon48.png" alt="AutoApply" />
+        <div class="sidebar__brand-text">
+          <div class="sidebar__title">AutoApply</div>
+          <div class="sidebar__subtitle">Settings</div>
+        </div>
+      </div>
+      <nav class="sidebar__nav">
+        <button type="button" class="nav-item nav-item--active" data-tab="profile">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          <span class="nav-item__label">Profile</span>
+        </button>
+        <button type="button" class="nav-item" data-tab="api">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          <span class="nav-item__label">API &amp; resume</span>
+        </button>
+        <button type="button" class="nav-item" data-tab="detection">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <span class="nav-item__label">Form detection</span>
+        </button>
+      </nav>
+      <p class="sidebar__note">Data is stored locally as JSON in this browser.</p>
+    </aside>
+
+    <main class="main">
+      <header class="main__head">
+        <h1 class="main__title" id="panelTitle">Profile</h1>
+      </header>
+
+      <!-- PROFILE TAB -->
+      <section class="tab-panel tab-panel--active" data-panel="profile">
+        <div class="toolbar">
+          <select id="profileSelect" class="toolbar__select"></select>
+          <button id="addProfile" class="btn btn--ghost">+ New profile</button>
+          <button id="exportBtn" class="btn btn--ghost">Export JSON</button>
+          <label class="btn btn--ghost btn--file">Import JSON<input type="file" id="importFile" accept="application/json" hidden /></label>
+          <button id="toggleRaw" class="btn btn--ghost">Toggle raw JSON</button>
+        </div>
+
+        <div class="completeness">
+          <div class="completeness__title">Profile completeness</div>
+          <div id="completenessBody"></div>
+        </div>
+
+        <div class="editor">
+          <form id="profileForm" class="editor__form"></form>
+          <div id="rawWrap" class="editor__raw hidden">
+            <div class="editor__raw-head">
+              <h2 class="editor__raw-title">Raw JSON (backend)</h2>
+              <span id="rawStatus" class="raw-status"></span>
+            </div>
+            <p class="editor__raw-hint">Edits here sync live to the fields. Invalid JSON is restored when you click away.</p>
+            <textarea id="rawJson" class="editor__raw-area" spellcheck="false"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- API & RESUME TAB -->
+      <section class="tab-panel" data-panel="api">
+        <div class="card-block card-block--ai">
+          <div class="card-block__title">Import from resume (AI)</div>
+          <div class="field-line">
+            <label class="field-line__field">Provider
+              <select id="aiProvider">
+                <option value="gemini">Google Gemini</option>
+                <option value="groq">Groq</option>
+                <option value="openrouter">OpenRouter</option>
+              </select>
+            </label>
+            <label class="field-line__field field-line__field--grow">API key (stored locally per provider)
+              <input id="aiKey" type="password" placeholder="Paste your free API key" />
+            </label>
+            <label class="field-line__field field-line__field--grow">Model
+              <select id="aiModel"><option value="">Enter API key, then Refresh models</option></select>
+            </label>
+            <button id="saveKey" class="btn btn--ghost">Save key</button>
+            <button id="refreshModels" class="btn btn--ghost">Refresh models</button>
+          </div>
+          <div class="field-line">
+            <label class="btn btn--ghost btn--file">Choose resume (PDF / DOCX)<input type="file" id="resumeFile" accept=".pdf,.docx,.txt" hidden /></label>
+            <button id="parseResume" class="btn btn--primary">Import resume with AI</button>
+            <span id="aiStatus" class="status"></span>
+          </div>
+          <p class="muted muted--small">Resume text (or the PDF, for Gemini) is sent to the selected provider to extract fields. Free keys: aistudio.google.com, console.groq.com, openrouter.ai.</p>
+        </div>
+
+        <div class="card-block card-block--cv">
+          <div class="card-block__title">CV / Resume file</div>
+          <div class="field-line">
+            <label class="btn btn--ghost btn--file">Choose file (PDF / DOCX)<input type="file" id="cvFile" accept=".pdf,.doc,.docx" hidden /></label>
+            <button id="saveCv" class="btn btn--primary">Save for auto-attach</button>
+            <span id="cvStatus" class="status"></span>
+          </div>
+          <p class="muted muted--small">Stored locally per profile — each profile can have its own CV/resume. Auto-attaches to resume/CV upload fields when you click Fill.</p>
+        </div>
+      </section>
+
+      <!-- FORM DETECTION TAB -->
+      <section class="tab-panel" data-panel="detection">
+        <div class="card-block card-block--detect">
+          <div class="card-block__title">Form detection</div>
+          <label class="detect__toggle"><input type="checkbox" id="detectEnabled" /> Detect forms automatically and show a count badge on the toolbar icon</label>
+          <div class="field-line">
+            <label class="field-line__field field-line__field--grow">Only detect on these sites (one domain per line — leave empty for all sites)
+              <textarea id="detectAllow" rows="3" spellcheck="false" placeholder="e.g. jobs.lever.co"></textarea>
+            </label>
+            <label class="field-line__field field-line__field--grow">Never detect on these sites
+              <textarea id="detectBlock" rows="3" spellcheck="false" placeholder="e.g. mail.google.com"></textarea>
+            </label>
+          </div>
+          <button id="saveDetect" class="btn btn--ghost">Save detection settings</button>
+          <span id="detectStatus" class="status"></span>
+          <p class="muted muted--small">Domains match subdomains too (e.g. <code>greenhouse.io</code> covers <code>boards.greenhouse.io</code>). The blocklist always wins.</p>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <button id="saveBtn" class="btn btn--primary">Save profile</button>
+        <span id="status" class="status"></span>
+      </footer>
+    </main>
+  </div>
+
+  <script src="../lib/fields.js"></script>
+  <script src="../lib/storage.js"></script>
+  <script src="../lib/extract.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
