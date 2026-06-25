@@ -3,13 +3,21 @@
   "name": "AutoApply — Form Autofiller",
   "version": "1.17.0",
   "description": "Autofill forms and job applications from a local JSON profile.",
-  "permissions": ["storage", "unlimitedStorage", "activeTab", "scripting", "contextMenus"],
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "activeTab",
+    "scripting",
+    "contextMenus"
+  ],
   "host_permissions": [
     "https://generativelanguage.googleapis.com/*",
     "https://api.groq.com/*",
     "https://openrouter.ai/*"
   ],
-  "background": { "service_worker": "background.js" },
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "popup/popup.html",
     "default_icon": {
@@ -26,19 +34,37 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["lib/fields.js", "lib/matcher.js", "lib/storage.js", "content.js"],
-      "css": ["content.css"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "lib/fields.js",
+        "lib/matcher.js",
+        "lib/storage.js",
+        "content.js"
+      ],
+      "css": [
+        "content.css"
+      ],
       "run_at": "document_idle",
       "all_frames": true
     }
   ],
   "web_accessible_resources": [
-    { "resources": ["data/profile.default.json"], "matches": ["<all_urls>"] }
+    {
+      "resources": [
+        "data/profile.default.json"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
   ],
   "commands": {
     "fill-form": {
-      "suggested_key": { "default": "Alt+Shift+F" },
+      "suggested_key": {
+        "default": "Alt+Shift+F"
+      },
       "description": "Autofill the current page"
     }
   }
