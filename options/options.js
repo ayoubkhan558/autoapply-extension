@@ -578,17 +578,21 @@ async function init() {
   });
 
   // Form-detection settings
-  const detect = settings.detect || { enabled: true, allowlist: "", blocklist: "" };
+  const detect = settings.detect || { enabled: true, allowlist: "", blocklist: "", keywords: "", minFields: 4 };
   function asText(v) { return Array.isArray(v) ? v.join("\n") : (v || ""); }
   document.getElementById("detectEnabled").checked = detect.enabled !== false;
   document.getElementById("detectAllow").value = asText(detect.allowlist);
   document.getElementById("detectBlock").value = asText(detect.blocklist);
+  document.getElementById("detectKeywords").value = asText(detect.keywords);
+  document.getElementById("detectMinFields").value = String(parseInt(detect.minFields, 10) || 4);
   document.getElementById("saveDetect").addEventListener("click", async function () {
     const s = await aaLoadSettings();
     s.detect = {
       enabled: document.getElementById("detectEnabled").checked,
       allowlist: document.getElementById("detectAllow").value.trim(),
-      blocklist: document.getElementById("detectBlock").value.trim()
+      blocklist: document.getElementById("detectBlock").value.trim(),
+      keywords: document.getElementById("detectKeywords").value.trim(),
+      minFields: Math.max(1, parseInt(document.getElementById("detectMinFields").value, 10) || 4)
     };
     await aaSaveSettings(s);
     const st = document.getElementById("detectStatus");

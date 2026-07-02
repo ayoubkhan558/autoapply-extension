@@ -141,11 +141,9 @@
   }
 
   function applyCheck(el, score) {
-    el.checked = true;
-    el.dispatchEvent(new Event("input", { bubbles: true }));
-    el.dispatchEvent(new Event("change", { bubbles: true }));
-    markFilled(el, score);
-    return true;
+    const ok = checkEl(el);
+    if (ok) markFilled(el, score);
+    return ok;
   }
 
   async function applyResume(item) {
@@ -318,14 +316,24 @@
     return true;
   }
 
+  // Commit a <select> choice through the native value setter so framework
+  // (React/Vue/Angular) controlled selects register the change, then fire the
+  // events they listen to.
+  function commitSelect(el, idx) {
+    const desc = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, "value");
+    if (desc && desc.set) desc.set.call(el, el.options[idx].value);
+    el.selectedIndex = idx;
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
   function fillSelect(el, value) {
     const target = norm(value);
     if (!target) return false;
     const opts = el.options;
     for (let i = 0; i < opts.length; i++) {
       if (norm(opts[i].textContent) === target || norm(opts[i].value) === target) {
-        el.selectedIndex = i;
-        el.dispatchEvent(new Event("change", { bubbles: true }));
+        commitSelect(el, i);
         return true;
       }
     }
@@ -339,9 +347,25 @@
         if (diff < bestDiff) { bestDiff = diff; bestIdx = i; }
       }
     }
+    // Token-overlap fallback, e.g. profile "Bachelor's Degree, Computer Science"
+    // vs option "Bachelors".
+    if (bestIdx === -1) {
+      const tokens = valTokens(value);
+      for (let i = 0; i < opts.length && bestIdx === -1; i++) {
+        const tx = norm(opts[i].textContent);
+        if (!tx || /^(--|select|choose|please|no answer|none|any)\b/.test(tx)) continue;
+        if (tokens.some(function (tk) { return tk.length >= 3 && (tx === tk || tx.indexOf(tk) !== -1); })) bestIdx = i;
+      }
+    }
+    // Boolean fallback: map yes/no-ish profile values onto "Yes ..." / "No ..." options.
+    if (bestIdx === -1 && (isYes(value) || isNo(value))) {
+      const want = isYes(value) ? /^y(es)?\b/ : /^no?\b/;
+      for (let i = 0; i < opts.length && bestIdx === -1; i++) {
+        if (want.test(norm(opts[i].textContent))) bestIdx = i;
+      }
+    }
     if (bestIdx !== -1) {
-      el.selectedIndex = bestIdx;
-      el.dispatchEvent(new Event("change", { bubbles: true }));
+      commitSelect(el, bestIdx);
       return true;
     }
     return false;
@@ -437,84 +461,51 @@
     return parts.join(" ");
   }
 
+  // Set `checked` through the native property setter so framework-controlled
+  // inputs (React/Vue/Angular) register the change.
+  function setNativeChecked(el, checked) {
+    const desc = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "checked");
+    if (desc && desc.set) desc.set.call(el, checked);
+    else el.checked = checked;
+  }
+
   function checkEl(el) {
-    el.checked = true;
-    el.dispatchEvent(new Event("input", { bubbles: true }));
-    el.dispatchEvent(new Event("change", { bubbles: true }));
+    // Prefer a real click: it toggles the control natively and fires the full
+    // event sequence (pointer, click, input, change) custom widgets rely on.
+    if (!el.checked) { try { el.click(); } catch (e) { /* ignore */ } }
+    if (!el.checked) {
+      setNativeChecked(el, true);
+      el.dispatchEvent(new Event("click", { bubbles: true }));
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+    }
     el.classList.add(HL_CLASS);
+    return !!el.checked;
   }
 
-  function fillForms(controls, flat, customFields) {
-    let filled = 0;
-    controls.forEach(function (el) {
-      const t = (el.type || "").toLowerCase();
-      if (t === "radio" || t === "checkbox") return;
-      if (!isFillable(el)) return;
-      if (el.tagName !== "SELECT" && el.value && el.value.trim()) return;
-      const sig = { text: getLabelText(el), attr: getAttrText(el) };
-      if (isSearchField(el, sig)) return;
-      const best = resolveValue(sig, flat, customFields);
-      if (best.score < 0.6) return;
-      const value = best.value;
-      if (value === undefined || value === null || value === "") return;
-      let ok = false;
-      if (el.tagName === "SELECT") { ok = fillSelect(el, value); }
-      else { ok = fillTextLike(el, String(value)); }
-      if (ok) {
-        filled++;
-        el.classList.add(HL_CLASS);
-        setTimeout(function () { el.classList.remove(HL_CLASS); }, 3000);
+  // Label for ONE radio/checkbox option (not the whole question). Unlike
+  // getLabelText, this never falls back to the surrounding question text,
+  // which previously made every option in a group look identical and broke
+  // radio/checkbox matching.
+  function optionLabel(el) {
+    const root = (el.getRootNode && el.getRootNode()) || document;
+    const scope = root && root.querySelector ? root : document;
+    const parts = [];
+    if (el.id) {
+      try { const lbl = scope.querySelector('label[for="' + CSS.escape(el.id) + '"]'); if (lbl) parts.push(aaText(lbl)); } catch (e) { /* ignore */ }
+    }
+    const wrap = el.closest("label");
+    if (wrap) parts.push(aaText(wrap));
+    if (el.getAttribute("aria-label")) parts.push(el.getAttribute("aria-label"));
+    if (!parts.join("").trim()) {
+      const sib = el.nextElementSibling;
+      if (sib && /^(LABEL|SPAN|DIV|P|B|STRONG)$/.test(sib.tagName)) {
+        const t = aaText(sib);
+        if (t && t.length <= 120) parts.push(t);
       }
-    });
-    return filled;
-  }
-
-  function fillRadios(controls, flat, customFields) {
-    let n = 0;
-    const groups = {};
-    controls.forEach(function (el) {
-      if ((el.type || "").toLowerCase() !== "radio" || el.disabled) return;
-      const key = el.name || ("__nn_" + (el.id || ""));
-      (groups[key] = groups[key] || []).push(el);
-    });
-    Object.keys(groups).forEach(function (key) {
-      const group = groups[key];
-      if (group.some(function (r) { return r.checked; })) return;
-      const sig = { text: questionText(group[0]), attr: key };
-      if (isSearchField(group[0], sig)) return;
-      const best = resolveValue(sig, flat, customFields);
-      if (best.score < 0.6 || best.value === undefined || best.value === null || best.value === "") return;
-      const tokens = valTokens(best.value);
-      let chosen = null;
-      group.forEach(function (r) {
-        const rl = norm(getLabelText(r) || r.value);
-        if (!rl || chosen) return;
-        const hit = tokens.some(function (tk) { return tk.length >= 2 && (rl === tk || rl.indexOf(tk) !== -1 || tk.indexOf(rl) !== -1); });
-        if (hit) chosen = r;
-      });
-      if (!chosen && (isYes(best.value) || isNo(best.value))) {
-        const want = isYes(best.value) ? /^(yes|y)$/ : /^(no|n)$/;
-        group.forEach(function (r) { const rl = norm(getLabelText(r) || r.value); if (!chosen && want.test(rl)) chosen = r; });
-      }
-      if (chosen) { checkEl(chosen); n++; }
-    });
-    return n;
-  }
-
-  function fillCheckboxes(controls, skillTokens) {
-    let n = 0;
-    controls.forEach(function (el) {
-      if ((el.type || "").toLowerCase() !== "checkbox" || el.disabled || el.checked) return;
-      const lbl = norm(getLabelText(el));
-      if (!lbl) return;
-      if (/agree|terms|privacy|consent|newsletter|subscribe|none of/.test(lbl)) return;
-      const hit = skillTokens.some(function (tk) {
-        if (tk.length < 2) return false;
-        return lbl === tk || lbl.indexOf(tk) !== -1 || tk.indexOf(lbl) !== -1;
-      });
-      if (hit) { checkEl(el); n++; }
-    });
-    return n;
+    }
+    if (!parts.join("").trim() && el.value && el.value !== "on") parts.push(el.value);
+    return parts.join(" ").replace(/\s+/g, " ").trim();
   }
 
   async function attachResume() {
@@ -601,14 +592,15 @@
     const tokens = valTokens(value);
     let chosen = null;
     group.forEach(function (r) {
-      const rl = norm(getLabelText(r) || r.value);
+      const rl = norm(optionLabel(r));
       if (!rl || chosen) return;
       const hit = tokens.some(function (tk) { return tk.length >= 2 && (rl === tk || rl.indexOf(tk) !== -1 || tk.indexOf(rl) !== -1); });
       if (hit) chosen = r;
     });
     if (!chosen && (isYes(value) || isNo(value))) {
-      const want = isYes(value) ? /^(yes|y)$/ : /^(no|n)$/;
-      group.forEach(function (r) { const rl = norm(getLabelText(r) || r.value); if (!chosen && want.test(rl)) chosen = r; });
+      // Prefix match so "Yes, I am authorized" still matches a "yes" value.
+      const want = isYes(value) ? /^y(es)?\b/ : /^no?\b/;
+      group.forEach(function (r) { const rl = norm(optionLabel(r)); if (!chosen && want.test(rl)) chosen = r; });
     }
     return chosen;
   }
@@ -629,7 +621,7 @@
       const best = resolveValue(sig, flat, customFields);
       if (best.score < 0.6 || best.value === undefined || best.value === null || best.value === "") return;
       const chosen = pickRadio(group, best.value);
-      if (chosen) out.push({ kind: "radio", el: chosen, label: displayLabel(sig, chosen), value: (getLabelText(chosen) || chosen.value || "Selected"), score: best.score, editable: false });
+      if (chosen) out.push({ kind: "radio", el: chosen, label: displayLabel(sig, chosen), value: (optionLabel(chosen) || chosen.value || "Selected"), score: best.score, editable: false });
     });
     return out;
   }
@@ -638,7 +630,7 @@
     const out = [];
     controls.forEach(function (el) {
       if ((el.type || "").toLowerCase() !== "checkbox" || el.disabled || el.checked) return;
-      const lbl = norm(getLabelText(el));
+      const lbl = norm(optionLabel(el) || getLabelText(el));
       if (!lbl) return;
       if (/newsletter|subscribe|marketing|promotional|mailing list/.test(lbl)) return;
       if (/none of/.test(lbl)) return;
@@ -1404,21 +1396,45 @@
     });
     return count;
   }
-  function aaPageHasForm() {
-    const count = aaCountFillable();
-    const hasFormEl = !!document.querySelector("form");
-    return { has: count >= 2 || (count >= 1 && hasFormEl), count: count };
+  // Built-in phrases that signal a job-application page. Users can add their
+  // own keywords in Options -> Form detection.
+  var AA_JOB_KEYWORDS = ["apply now", "job application", "application form", "apply for this job", "apply for this position", "cover letter", "resume", "curriculum vitae", "work authorization", "notice period", "expected salary", "current salary", "salary expectation", "years of experience", "linkedin profile", "why do you want", "equal opportunity employer", "we're hiring", "we\u2019re hiring", "position applied", "current company", "willing to relocate", "visa sponsorship", "earliest start date", "date available", "employment history", "desired salary", "hiring process"];
+  function aaCustomKeywords(settings) {
+    var raw = (settings && settings.detect && settings.detect.keywords) || "";
+    return String(raw).split(/[\n,]+/).map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean);
   }
-  var aaDetectToastShown = false;
-  function aaJobSignal() {
+  function aaMinFields(settings) {
+    var n = parseInt(settings && settings.detect && settings.detect.minFields, 10);
+    return (isNaN(n) || n < 1) ? 4 : n;
+  }
+  function aaPageText() {
+    var body = (document.body && document.body.innerText) ? document.body.innerText.slice(0, 8000) : "";
+    return ((document.title || "") + " " + location.href + " " + body).toLowerCase();
+  }
+  function aaJobSignal(settings) {
     var hosts = ["greenhouse.io", "lever.co", "ashbyhq.com", "workable.com", "indeed.com", "myworkdayjobs.com", "smartrecruiters.com", "jobvite.com", "icims.com", "taleo.net", "bamboohr.com", "breezy.hr", "recruitee.com"];
     var h = location.hostname.toLowerCase();
     if (hosts.some(function (e) { return h.indexOf(e) !== -1; })) return true;
     if (/(^|\.)jobs\.|(^|\.)careers\./.test(h)) return true;
-    var body = (document.body && document.body.innerText) ? document.body.innerText.slice(0, 4000) : "";
-    var hay = ((document.title || "") + " " + location.href + " " + body).toLowerCase();
-    return /(apply now|job application|cover letter|work authorization|we['\u2019]re hiring|resume\/cv|curriculum vitae|equal opportunity employer)/.test(hay);
+    var hay = aaPageText();
+    // Any user-added keyword is a strong signal on its own.
+    if (aaCustomKeywords(settings).some(function (kw) { return hay.indexOf(kw) !== -1; })) return true;
+    // Require at least two built-in phrases so generic pages (search boxes,
+    // logins, newsletters) are not mistaken for job application forms.
+    var hits = 0;
+    for (var i = 0; i < AA_JOB_KEYWORDS.length && hits < 2; i++) {
+      if (hay.indexOf(AA_JOB_KEYWORDS[i]) !== -1) hits++;
+    }
+    return hits >= 2;
   }
+  function aaPageHasForm(settings) {
+    const count = aaCountFillable();
+    // A page only counts as a job form when it has at least `minFields`
+    // fillable fields AND its content looks like a job application.
+    const isJob = count >= aaMinFields(settings) && aaJobSignal(settings);
+    return { has: isJob, count: count, isJob: isJob };
+  }
+  var aaDetectToastShown = false;
   function aaShowDetectToast(count, isJob, profileName) {
     var old = document.getElementById("aa-detect-toast");
     if (old) old.remove();
@@ -1450,14 +1466,14 @@
     aaLoadSettings().then(function (settings) {
       const allowed = aaDetectionAllowed(settings);
       let count = 0;
-      if (allowed) { const r = aaPageHasForm(); count = r.has ? r.count : 0; }
+      if (allowed) { const r = aaPageHasForm(settings); count = r.has ? r.count : 0; }
       // Report this frame's count; the background aggregates across all frames for the badge.
       try { chrome.runtime.sendMessage({ action: "aa-form-detected", count: count, allowed: allowed }); } catch (e) { /* ignore */ }
       // Show the in-page toast in whichever frame actually holds the form. Job application
       // forms (Greenhouse, Lever, Ashby, Workday, etc.) are frequently embedded in an iframe.
       if (allowed && count > 0 && !aaDetectToastShown) {
         aaDetectToastShown = true;
-        var isJob = aaJobSignal();
+        var isJob = true; // detection now only fires for job-application forms
         // Resolve the active profile name so the toast can show which profile will be used.
         aaLoadData().then(function (data) {
           var name = "";
@@ -1615,7 +1631,7 @@
     if (msg && msg.action === "aa-detect") {
       aaLoadSettings().then(function (settings) {
         const allowed = aaDetectionAllowed(settings);
-        const r = allowed ? aaPageHasForm() : { has: false, count: 0 };
+        const r = allowed ? aaPageHasForm(settings) : { has: false, count: 0 };
         sendResponse({ allowed: allowed, has: r.has, count: r.count, host: aaTopHost() });
       }).catch(function () { sendResponse({ allowed: false, has: false, count: 0 }); });
       return true;

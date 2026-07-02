@@ -118,6 +118,14 @@
               <textarea id="detectBlock" rows="3" spellcheck="false" placeholder="e.g. mail.google.com"></textarea>
             </label>
           </div>
+          <div class="field-line">
+            <label class="field-line__field field-line__field--grow">Extra job-form keywords (comma or newline separated — added to the built-in list)
+              <textarea id="detectKeywords" rows="3" spellcheck="false" placeholder="e.g. join our team, internship application"></textarea>
+            </label>
+            <label class="field-line__field">Minimum fields for a job form
+              <input id="detectMinFields" type="number" min="1" max="50" step="1" />
+            </label>
+          </div>
           <button id="saveDetect" class="btn btn--ghost">Save detection settings</button>
           <span id="detectStatus" class="status"></span>
           <p class="muted muted--small">Domains match subdomains too (e.g. <code>greenhouse.io</code> covers <code>boards.greenhouse.io</code>). The blocklist always wins.</p>
