@@ -94,15 +94,6 @@
           <p class="muted muted--small">Resume text (or the PDF, for Gemini) is sent to the selected provider to extract fields. Free keys: aistudio.google.com, console.groq.com, openrouter.ai.</p>
         </div>
 
-        <div class="card-block card-block--cv">
-          <div class="card-block__title">CV / Resume file</div>
-          <div class="field-line">
-            <label class="btn btn--ghost btn--file">Choose file (PDF / DOCX)<input type="file" id="cvFile" accept=".pdf,.doc,.docx" hidden /></label>
-            <button id="saveCv" class="btn btn--primary">Save for auto-attach</button>
-            <span id="cvStatus" class="status"></span>
-          </div>
-          <p class="muted muted--small">Stored locally per profile — each profile can have its own CV/resume. Auto-attaches to resume/CV upload fields when you click Fill.</p>
-        </div>
       </section>
 
       <!-- FORM DETECTION TAB -->
@@ -121,11 +112,20 @@
           <div class="field-line">
             <label class="field-line__field field-line__field--grow">Extra job-form keywords (comma or newline separated — added to the built-in list)
               <textarea id="detectKeywords" rows="3" spellcheck="false" placeholder="e.g. join our team, internship application"></textarea>
+              <small class="field-help">Built-in matching keywords are shown below. Add only extra phrases here.</small>
+            </label>
+            <label class="field-line__field field-line__field--grow">Job titles / role names to detect
+              <textarea id="detectRoles" rows="3" spellcheck="false" placeholder="e.g. WordPress Developer, SEO Developer, ERP Developer"></textarea>
+              <small class="field-help">When these titles appear on a page with application fields, AutoApply treats it as a job form.</small>
             </label>
             <label class="field-line__field">Minimum fields for a job form
               <input id="detectMinFields" type="number" min="1" max="50" step="1" />
             </label>
           </div>
+          <details class="keyword-reference">
+            <summary>Default job-form keywords used for detection</summary>
+            <p id="defaultJobKeywords" class="keyword-reference__list"></p>
+          </details>
           <button id="saveDetect" class="btn btn--ghost">Save detection settings</button>
           <span id="detectStatus" class="status"></span>
           <p class="muted muted--small">Domains match subdomains too (e.g. <code>greenhouse.io</code> covers <code>boards.greenhouse.io</code>). The blocklist always wins.</p>

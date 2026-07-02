@@ -88,20 +88,7 @@ async function init() {
     refreshQuick();
   });
   refreshQuick();
-  (function () {
-    const ce = document.getElementById("copyEmail");
-    const cp = document.getElementById("copyPhone");
-    if (ce) ce.addEventListener("click", function () {
-      const v = ((aaActiveProfile() || {}).personal || {}).email || "";
-      if (!v) return;
-      navigator.clipboard.writeText(v).then(function () { setStatus("Email copied.", "success"); }).catch(function () { setStatus("Copy failed.", "error"); });
-    });
-    if (cp) cp.addEventListener("click", function () {
-      const v = ((aaActiveProfile() || {}).personal || {}).phone || "";
-      if (!v) return;
-      navigator.clipboard.writeText(v).then(function () { setStatus("Phone copied.", "success"); }).catch(function () { setStatus("Copy failed.", "error"); });
-    });
-  })();
+  // Email/phone quick rows are intentionally hidden in the compact popup.
   const editBtn = document.getElementById("editProfileBtn");
   if (editBtn) editBtn.addEventListener("click", function () { chrome.runtime.openOptionsPage(); });
   const settingsBtn = document.getElementById("openSettingsBtn");

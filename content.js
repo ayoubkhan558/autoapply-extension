@@ -189,9 +189,17 @@
     }
     if (!flat["experience.company"] && flat["professional.currentCompany"]) flat["experience.company"] = flat["professional.currentCompany"];
     if (!flat["experience.title"] && flat["professional.currentTitle"]) flat["experience.title"] = flat["professional.currentTitle"];
+    if (!flat["links.portfolio"] && flat["links.website"]) flat["links.portfolio"] = flat["links.website"];
+    if (!flat["links.website"] && flat["links.portfolio"]) flat["links.website"] = flat["links.portfolio"];
+    if (!flat["professional.availableStartDate"]) flat["professional.availableStartDate"] = aaNextMonthFirstDate();
     if (!flat["professional.currentCompany"] && flat["experience.company"]) flat["professional.currentCompany"] = flat["experience.company"];
     if (!flat["professional.currentTitle"] && flat["experience.title"]) flat["professional.currentTitle"] = flat["experience.title"];
     return flat;
+  }
+
+  function aaNextMonthFirstDate() {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth() + 1, 1).toISOString().slice(0, 10);
   }
 
   function aaText(el) {
@@ -297,6 +305,24 @@
     else { el.value = value; }
   }
 
+  function setRichTextValue(el, value) {
+    const v = String(value || "");
+    el.focus();
+    try { document.execCommand("selectAll", false, null); document.execCommand("insertText", false, v); } catch (e) { /* fallback below */ }
+    if ((el.innerText || el.textContent || "").trim() !== v.trim()) {
+      el.innerHTML = "";
+      v.split(/\n/).forEach(function (line) {
+        const block = document.createElement("div");
+        block.className = "ql-block";
+        block.textContent = line || " ";
+        el.appendChild(block);
+      });
+    }
+    el.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: v }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+    el.dispatchEvent(new Event("blur", { bubbles: true }));
+  }
+
   function fireEvents(el) {
     el.dispatchEvent(new Event("input", { bubbles: true }));
     el.dispatchEvent(new Event("change", { bubbles: true }));
@@ -311,8 +337,8 @@
       if (num === "" || isNaN(Number(num))) return false;
       v = num;
     }
-    setNativeValue(el, v);
-    fireEvents(el);
+    if (el.isContentEditable) setRichTextValue(el, v);
+    else { setNativeValue(el, v); fireEvents(el); }
     return true;
   }
 
@@ -328,7 +354,10 @@
   }
 
   function fillSelect(el, value) {
-    const target = norm(value);
+    let rawValue = String(value || "");
+    const sigText = norm(getLabelText(el) + " " + getAttrText(el));
+    if (/notice/.test(sigText)) rawValue = rawValue.replace(/\s*days?$/i, " days");
+    const target = norm(rawValue);
     if (!target) return false;
     const opts = el.options;
     for (let i = 0; i < opts.length; i++) {
@@ -355,6 +384,19 @@
         const tx = norm(opts[i].textContent);
         if (!tx || /^(--|select|choose|please|no answer|none|any)\b/.test(tx)) continue;
         if (tokens.some(function (tk) { return tk.length >= 3 && (tx === tk || tx.indexOf(tk) !== -1); })) bestIdx = i;
+      }
+    }
+    // Notice-period fallback: map "30" to "30 days" / value "30 00:00:00".
+    if (bestIdx === -1 && /notice/.test(sigText)) {
+      const n = (String(value).match(/\d+/) || [""])[0];
+      if (n) {
+        for (let i = 0; i < opts.length; i++) {
+          const tx = norm(opts[i].textContent + " " + opts[i].value);
+          if (tx.indexOf(n) !== -1) { bestIdx = i; break; }
+        }
+      }
+      if (bestIdx === -1 && /immediate|0/.test(target)) {
+        for (let i = 0; i < opts.length; i++) if (/immediate|^0$/.test(norm(opts[i].textContent + " " + opts[i].value))) { bestIdx = i; break; }
       }
     }
     // Boolean fallback: map yes/no-ish profile values onto "Yes ..." / "No ..." options.
@@ -574,8 +616,9 @@
     controls.forEach(function (el) {
       const t = (el.type || "").toLowerCase();
       if (t === "radio" || t === "checkbox") return;
-      if (!isFillable(el)) return;
-      if (el.tagName !== "SELECT" && el.value && el.value.trim()) return;
+      if (!isFillable(el) && !el.isContentEditable) return;
+      if (el.isContentEditable && (el.innerText || el.textContent || "").trim()) return;
+      if (!el.isContentEditable && el.tagName !== "SELECT" && el.value && el.value.trim()) return;
       const sig = { text: getLabelText(el), attr: getAttrText(el) };
       if (isSearchField(el, sig)) return;
       const best = resolveValue(sig, flat, customFields);
@@ -686,8 +729,12 @@
     }
     const wrapLabel = el.closest("label");
     if (wrapLabel) t += " " + wrapLabel.textContent;
+    const near = nearestLabel(el);
+    if (near) t += " " + near;
     return t.replace(/\s+/g, " ").trim();
   }
+
+  function aaMenuId(el) { return el.getAttribute("aria-controls") || el.getAttribute("aria-owns") || el.getAttribute("data-menu-id") || ""; }
 
   async function fillCustomSelects(ctx, box, filledEls) {
     let filled = 0;
@@ -697,6 +744,8 @@
     nodes.forEach(function (el) {
       const tag = el.tagName;
       if (tag === "SELECT" || tag === "INPUT" || tag === "TEXTAREA") return;
+      const ariaDisabled = el.getAttribute("aria-disabled");
+      if (ariaDisabled === "true") return;
       if (el.disabled || aaIsHidden(el)) return;
       // When a lasso box is supplied, only consider widgets inside it.
       if (box) {
@@ -720,7 +769,8 @@
         trg.click();
         await sleep(240);
         let optionNodes;
-        try { optionNodes = document.querySelectorAll('[role="option"], li[role="option"], [role="menuitem"], [class*="option"]'); } catch (e) { optionNodes = []; }
+        const mid = aaMenuId(trg);
+        try { optionNodes = document.querySelectorAll((mid ? ("#" + (window.CSS && CSS.escape ? CSS.escape(mid) : mid) + " ") : "") + '[role="option"], [role="option"], li[role="option"], [role="menuitem"], [class*="option"], [class*="SelectOption"], [data-value]'); } catch (e) { optionNodes = []; }
         let picked = null;
         let exact = null;
         optionNodes.forEach(function (o) {
@@ -729,6 +779,10 @@
           if (!ot || ot.length > 60) return;
           if (ot === want) exact = o;
           else if (!picked && want.length >= 2 && (ot.indexOf(want) !== -1 || want.indexOf(ot) !== -1)) picked = o;
+          else if (!picked && /country/.test(norm(sig.text + " " + sig.attr))) {
+            const pv = norm(String(best.value));
+            if (pv && (ot.indexOf(pv) !== -1 || pv.indexOf(ot) !== -1)) picked = o;
+          }
         });
         const choose = exact || picked;
         if (choose) {
@@ -750,6 +804,7 @@
     const ctx = await aaFillContext();
     if (!ctx) return { filled: 0, error: "no-profile" };
     const controls = collectControls();
+    document.querySelectorAll('[contenteditable="true"], .ql-editor[contenteditable="true"], [role="textbox"][contenteditable="true"]').forEach(function (ed) { if (controls.indexOf(ed) === -1) controls.push(ed); });
     let filled = 0;
     planText(controls, ctx.flat, ctx.customFields).forEach(function (p) {
       if (applyTextValue(p.el, p.value, p.score)) filled++;
@@ -1212,8 +1267,14 @@
     const btn = aaEl("button", "aa-btn-fix");
     btn.appendChild(aaIcon("pen"));
     btn.appendChild(document.createTextNode("Fix remaining with AI"));
+    if (!aaPageHasForm({ detect: { keywords: "", minFields: 4 } }).isJob) btn.style.display = "none";
     btn.addEventListener("click", function () { runAnswerQuestions(); });
     body.appendChild(btn);
+    const analyzeBtn = aaEl("button", "aa-btn-fix aa-btn-analyze");
+    analyzeBtn.appendChild(aaIcon("target"));
+    analyzeBtn.appendChild(document.createTextNode("Analyze this job"));
+    analyzeBtn.addEventListener("click", function () { runJobAnalysis(); });
+    body.appendChild(analyzeBtn);
     body.appendChild(aaEl("div", "aa-foot", "AI answers open-ended questions using your profile. Review before submitting."));
   }
 
@@ -1398,7 +1459,8 @@
   }
   // Built-in phrases that signal a job-application page. Users can add their
   // own keywords in Options -> Form detection.
-  var AA_JOB_KEYWORDS = ["apply now", "job application", "application form", "apply for this job", "apply for this position", "cover letter", "resume", "curriculum vitae", "work authorization", "notice period", "expected salary", "current salary", "salary expectation", "years of experience", "linkedin profile", "why do you want", "equal opportunity employer", "we're hiring", "we\u2019re hiring", "position applied", "current company", "willing to relocate", "visa sponsorship", "earliest start date", "date available", "employment history", "desired salary", "hiring process"];
+  var AA_JOB_KEYWORDS = ["apply now", "apply for the job", "apply for job", "job application", "application form", "fill job form", "fill application", "submit application", "apply for this job", "apply for this position", "cover letter", "upload cover letter", "resume", "upload resume", "cv", "upload cv", "upload cv/resume", "curriculum vitae", "work authorization", "notice period", "expected salary", "current salary", "salary expectation", "years of experience", "linkedin profile", "why do you want", "equal opportunity employer", "we're hiring", "we\u2019re hiring", "position applied", "current company", "current working status", "employment status", "willing to relocate", "visa sponsorship", "earliest start date", "date available", "availability date", "employment history", "desired salary", "hiring process", "candidate profile", "personal information", "professional information", "attach resume", "attach cv"];
+  var AA_DEFAULT_BLOCKED_SITES = ["mail.google.com", "outlook.live.com", "outlook.office.com", "web.whatsapp.com", "facebook.com", "instagram.com", "x.com", "twitter.com", "youtube.com", "notion.so", "docs.google.com", "drive.google.com", "dropbox.com", "paypal.com", "stripe.com", "accounts.google.com"];
   function aaCustomKeywords(settings) {
     var raw = (settings && settings.detect && settings.detect.keywords) || "";
     return String(raw).split(/[\n,]+/).map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean);
@@ -1452,15 +1514,18 @@
     toast.appendChild(aaEl("div", "aa-detect-toast__sub", count + " fillable field" + (count === 1 ? "" : "s") + " \u00b7 ~" + mins + " min to apply manually"));
     // Show which profile AutoApply will fill from, so the user can switch first if needed.
     if (profileName) toast.appendChild(aaEl("div", "aa-detect-toast__profile", "Will fill using: " + profileName));
-    var fill = aaEl("button", "aa-detect-toast__btn", isJob ? "\u26a1 Apply now \u2014 fill form" : "\u26a1 Fill form now");
+    var actions = aaEl("div", "aa-detect-toast__actions");
+    var fill = aaEl("button", "aa-detect-toast__btn", "Fill form");
     fill.addEventListener("click", function () { toast.remove(); try { run(); } catch (e) { /* ignore */ } });
-    toast.appendChild(fill);
+    var analyze = aaEl("button", "aa-detect-toast__btn aa-detect-toast__btn--ghost", "Analyze job");
+    analyze.addEventListener("click", function () { toast.remove(); try { runJobAnalysis(); } catch (e) { /* ignore */ } });
+    actions.appendChild(fill); actions.appendChild(analyze); toast.appendChild(actions);
     document.documentElement.appendChild(toast);
     setTimeout(function () {
       if (!toast.parentNode) return;
       toast.classList.add("aa-detect-toast--out");
       setTimeout(function () { if (toast.parentNode) toast.remove(); }, 400);
-    }, 9000);
+    }, 10000);
   }
   function aaReportDetection() {
     aaLoadSettings().then(function (settings) {

@@ -73,6 +73,11 @@ let DATA = null;
 let lastGoodJson = "";
 let rawTimer = null;
 
+const AA_DEFAULT_JOB_KEYWORDS = ["apply now", "apply for the job", "apply for job", "job application", "application form", "fill job form", "fill application", "submit application", "apply for this job", "apply for this position", "cover letter", "upload cover letter", "resume", "upload resume", "cv", "upload cv", "upload cv/resume", "curriculum vitae", "work authorization", "notice period", "expected salary", "current salary", "salary expectation", "years of experience", "linkedin profile", "why do you want", "equal opportunity employer", "we're hiring", "we’re hiring", "position applied", "current company", "current working status", "employment status", "willing to relocate", "visa sponsorship", "earliest start date", "date available", "availability date", "employment history", "desired salary", "hiring process", "candidate profile", "personal information", "professional information", "attach resume", "attach cv"];
+let PENDING_CV_FILE = null;
+
+const AA_DEFAULT_BLOCKED_SITES = ["mail.google.com", "outlook.live.com", "outlook.office.com", "web.whatsapp.com", "facebook.com", "instagram.com", "x.com", "twitter.com", "linkedin.com/feed", "youtube.com", "notion.so", "docs.google.com", "drive.google.com", "dropbox.com", "bank", "paypal.com", "stripe.com", "github.com/login", "accounts.google.com"];
+
 const DEFAULT_MODELS = {
   gemini: "gemini-1.5-flash",
   groq: "llama-3.3-70b-versatile",
@@ -216,45 +221,78 @@ function renderCustomCard(cf, idx) {
   return card;
 }
 
+function renderCvProfileBlock(prof) {
+  const block = document.createElement("div"); block.className = "card-block card-block--cv profile-cv";
+  block.innerHTML = '<div class="card-block__title">Profile CV / Resume</div><p class="muted muted--small">Stored per profile and auto-attached to CV/resume upload fields.</p><div class="field-line"><label class="btn btn--ghost btn--file">Choose CV / resume<input type="file" id="profileCvFile" accept=".pdf,.doc,.docx" hidden></label><span id="profileCvStatus" class="status"></span></div><p class="muted muted--small">After choosing a file, click the bottom Save button to save it with this profile.</p>';
+  setTimeout(function(){
+    const input=document.getElementById("profileCvFile"), st=document.getElementById("profileCvStatus");
+    if(input) input.onchange=function(){ PENDING_CV_FILE = input.files && input.files[0] ? input.files[0] : null; if(st && PENDING_CV_FILE){ st.textContent="Ready to save: "+PENDING_CV_FILE.name; st.className="status"; } };
+    if(prof && prof.id && st) aaGetResume(prof.id).then(function(cv){ if(cv&&cv.name){ st.textContent="Current: "+cv.name; st.className="status success"; } else { st.textContent="No CV saved yet."; st.className="status"; }});
+  },0);
+  return block;
+}
+
+
 function renderForm() {
   const prof = activeProfile();
   const form = document.getElementById("profileForm");
   form.innerHTML = "";
 
-  const metaGrid = document.createElement("div");
-  metaGrid.className = "field-grid";
-  const labelRow = makeRow("Profile label", prof.label || "", { meta: "label" }, false);
-  labelRow.classList.add("field-grid__row--full");
-  metaGrid.appendChild(labelRow);
-  form.appendChild(metaGrid);
+  const layout = document.createElement("div");
+  layout.className = "profile-fields-layout";
+  const nav = document.createElement("div");
+  nav.className = "profile-fields-nav";
+  const panels = document.createElement("div");
+  panels.className = "profile-fields-panels";
+  layout.appendChild(nav); layout.appendChild(panels);
+
+  function addLeftTab(id, label, build, active) {
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "profile-field-tab" + (active ? " is-active" : ""); btn.textContent = label;
+    const panel = document.createElement("section");
+    panel.className = "profile-field-panel" + (active ? " is-active" : ""); panel.dataset.panel = id;
+    build(panel);
+    btn.addEventListener("click", function(){
+      nav.querySelectorAll(".profile-field-tab").forEach(function(b){ b.classList.remove("is-active"); });
+      panels.querySelectorAll(".profile-field-panel").forEach(function(p){ p.classList.remove("is-active"); });
+      btn.classList.add("is-active"); panel.classList.add("is-active");
+    });
+    nav.appendChild(btn); panels.appendChild(panel);
+  }
+
+  addLeftTab("profile", "Profile", function(panel){
+    const metaGrid = document.createElement("div"); metaGrid.className = "field-grid";
+    const labelRow = makeRow("Profile label", prof.label || "", { meta: "label" }, false);
+    labelRow.classList.add("field-grid__row--full"); metaGrid.appendChild(labelRow); panel.appendChild(metaGrid);
+    panel.appendChild(renderCvProfileBlock(prof));
+  }, true);
 
   SECTIONS.forEach(function (section) {
-    form.appendChild(makeHeader(section.label));
-    if (!prof[section.key]) prof[section.key] = {};
-    const grid = document.createElement("div");
-    grid.className = "field-grid";
-    section.fields.forEach(function (fd) {
-      grid.appendChild(makeRow(fd.label, prof[section.key][fd.name] || "", { section: section.key, field: fd.name }, fd.long, fd.list));
-    });
-    form.appendChild(grid);
+    addLeftTab(section.key, section.label, function(panel){
+      if (!prof[section.key]) prof[section.key] = {};
+      const grid = document.createElement("div"); grid.className = "field-grid";
+      section.fields.forEach(function (fd) { grid.appendChild(makeRow(fd.label, prof[section.key][fd.name] || "", { section: section.key, field: fd.name }, fd.long, fd.list)); });
+      panel.appendChild(grid);
+    }, false);
   });
 
   REPEATERS.forEach(function (rep) {
-    form.appendChild(makeHeaderWithButton(rep.label, "+ Add " + rep.itemLabel, function () { addRepeaterEntry(rep.key); }));
-    ensureArray(prof, rep.key);
-    const list = document.createElement("div");
-    prof[rep.key].forEach(function (entry, idx) { list.appendChild(renderRepeaterCard(rep, entry, idx)); });
-    form.appendChild(list);
+    addLeftTab(rep.key, rep.label, function(panel){
+      panel.appendChild(makeHeaderWithButton(rep.label, "+ Add " + rep.itemLabel, function () { addRepeaterEntry(rep.key); }));
+      ensureArray(prof, rep.key);
+      const list = document.createElement("div"); prof[rep.key].forEach(function (entry, idx) { list.appendChild(renderRepeaterCard(rep, entry, idx)); }); panel.appendChild(list);
+    }, false);
   });
 
-  form.appendChild(makeHeaderWithButton("Custom fields", "+ Add field", function () { addCustomField(); }));
-  ensureArray(prof, "customFields");
-  const clist = document.createElement("div");
-  prof.customFields.forEach(function (cf, idx) { clist.appendChild(renderCustomCard(cf, idx)); });
-  form.appendChild(clist);
+  addLeftTab("custom", "Custom fields", function(panel){
+    panel.appendChild(makeHeaderWithButton("Custom fields", "+ Add field", function () { addCustomField(); }));
+    ensureArray(prof, "customFields"); const clist = document.createElement("div"); prof.customFields.forEach(function (cf, idx) { clist.appendChild(renderCustomCard(cf, idx)); }); panel.appendChild(clist);
+  }, false);
 
+  form.appendChild(layout);
   renderCompleteness(prof);
 }
+
 
 // Read a form input's value, converting comma-separated "list" fields
 // (e.g. languages, tools) back into an array for storage.
@@ -355,9 +393,28 @@ function renderRaw() {
 
 function setStatus(t, kind) {
   const s = document.getElementById("status");
-  s.textContent = t;
-  s.className = "status " + (kind || "");
-  if (t) setTimeout(function () { s.textContent = ""; }, 2500);
+  if (s) {
+    s.textContent = t;
+    s.className = "status " + (kind || "");
+  }
+  let toast = document.getElementById("saveToast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "saveToast";
+    toast.setAttribute("role", "status");
+    toast.setAttribute("aria-live", "polite");
+    document.body.appendChild(toast);
+  }
+  toast.textContent = t || "";
+  toast.className = "save-toast " + (kind || "");
+  if (t) {
+    toast.classList.add("is-visible");
+    clearTimeout(window.__aaSaveStatusTimer);
+    window.__aaSaveStatusTimer = setTimeout(function () {
+      if (s) s.textContent = "";
+      toast.classList.remove("is-visible");
+    }, 3500);
+  }
 }
 
 function setRawStatus(t, kind) {
@@ -375,10 +432,19 @@ function setAiStatus(t, kind) {
 }
 
 async function save() {
+  const saveBtn = document.getElementById("saveBtn");
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.dataset.originalText = saveBtn.dataset.originalText || saveBtn.textContent; saveBtn.textContent = "Saving…"; }
   collectForm();
+  if (!aaValidateSettings()) { if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = saveBtn.dataset.originalText || "Save profile"; } setStatus("Fix validation errors", "error"); return; }
+  if (PENDING_CV_FILE) {
+    const dataUrl = await aaFileToDataUrl(PENDING_CV_FILE);
+    await aaSetResume(DATA.activeProfileId, { name: PENDING_CV_FILE.name, type: PENDING_CV_FILE.type, dataUrl: dataUrl, ts: Date.now() });
+    PENDING_CV_FILE = null;
+  }
   await aaSaveData(DATA);
   renderRaw();
-  setStatus("Saved \u2713", "success");
+  setStatus("Saved ✓", "success");
+  if (saveBtn) { saveBtn.textContent = "Saved ✓"; setTimeout(function(){ saveBtn.disabled = false; saveBtn.textContent = saveBtn.dataset.originalText || "Save profile"; }, 1400); }
 }
 
 // Live: fields -> JSON
@@ -582,9 +648,14 @@ async function init() {
   function asText(v) { return Array.isArray(v) ? v.join("\n") : (v || ""); }
   document.getElementById("detectEnabled").checked = detect.enabled !== false;
   document.getElementById("detectAllow").value = asText(detect.allowlist);
-  document.getElementById("detectBlock").value = asText(detect.blocklist);
+  document.getElementById("detectBlock").value = asText(detect.blocklist) || AA_DEFAULT_BLOCKED_SITES.join("\n");
   document.getElementById("detectKeywords").value = asText(detect.keywords);
+  const rolesEl = document.getElementById("detectRoles");
+  if (rolesEl) rolesEl.value = asText(detect.roles || detect.jobTitles || "");
   document.getElementById("detectMinFields").value = String(parseInt(detect.minFields, 10) || 4);
+  const kw = document.getElementById("defaultJobKeywords");
+  if (kw) kw.textContent = AA_DEFAULT_JOB_KEYWORDS.join(", ");
+
   document.getElementById("saveDetect").addEventListener("click", async function () {
     const s = await aaLoadSettings();
     s.detect = {
@@ -592,6 +663,7 @@ async function init() {
       allowlist: document.getElementById("detectAllow").value.trim(),
       blocklist: document.getElementById("detectBlock").value.trim(),
       keywords: document.getElementById("detectKeywords").value.trim(),
+      roles: (document.getElementById("detectRoles") ? document.getElementById("detectRoles").value.trim() : ""),
       minFields: Math.max(1, parseInt(document.getElementById("detectMinFields").value, 10) || 4)
     };
     await aaSaveSettings(s);
@@ -607,30 +679,8 @@ async function init() {
 
   document.getElementById("parseResume").addEventListener("click", parseResume);
 
-  const cvFile = document.getElementById("cvFile");
-  function refreshCvStatus() {
-    aaGetResume(DATA.activeProfileId).then(function (saved) {
-      if (saved && saved.name) setCvStatus("Saved for this profile: " + saved.name, "success");
-      else setCvStatus("No CV saved for this profile yet.", "");
-    }).catch(function () { /* ignore */ });
-  }
-  refreshCvStatus();
-  cvFile.addEventListener("change", function () {
-    const f = this.files[0];
-    if (f) setCvStatus("Selected: " + f.name, "");
-  });
-  document.getElementById("saveCv").addEventListener("click", async function () {
-    const f = cvFile.files[0];
-    if (!f) { setCvStatus("Choose a CV / resume file first.", "error"); return; }
-    try {
-      const dataUrl = await aaFileToDataUrl(f);
-      const payload = { name: f.name, type: f.type, dataUrl: dataUrl };
-      await aaSetResume(DATA.activeProfileId, payload);
-      const prof = DATA.profiles.find(function (p) { return p.id === DATA.activeProfileId; });
-      const lbl = (prof && prof.label) || "this profile";
-      setCvStatus("Saved for " + lbl + " \u2014 will auto-attach on uploads: " + f.name, "success");
-    } catch (e) { setCvStatus(String((e && e.message) || e), "error"); }
-  });
+  // CV/resume upload lives in the Profile tab and is saved with the bottom Save button.
+
 
   document.getElementById("profileSelect").addEventListener("change", function (e) {
     collectForm();
