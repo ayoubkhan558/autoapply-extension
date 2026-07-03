@@ -1497,6 +1497,7 @@
     return { has: isJob, count: count, isJob: isJob };
   }
   var aaDetectToastShown = false;
+  var aaJobFormDetected = false;
   function aaShowDetectToast(count, isJob, profileName) {
     var old = document.getElementById("aa-detect-toast");
     if (old) old.remove();
@@ -1531,7 +1532,8 @@
     aaLoadSettings().then(function (settings) {
       const allowed = aaDetectionAllowed(settings);
       let count = 0;
-      if (allowed) { const r = aaPageHasForm(settings); count = r.has ? r.count : 0; }
+      if (allowed) { const r = aaPageHasForm(settings); count = r.has ? r.count : 0; aaSetJobFormDetected(!!r.has); }
+      else { aaSetJobFormDetected(false); }
       // Report this frame's count; the background aggregates across all frames for the badge.
       try { chrome.runtime.sendMessage({ action: "aa-form-detected", count: count, allowed: allowed }); } catch (e) { /* ignore */ }
       // Show the in-page toast in whichever frame actually holds the form. Job application
@@ -1586,7 +1588,7 @@
   }
 
   function aaShowAiBtn(field) {
-    if (!aaAiBtn) return;
+    if (!aaAiBtn || !aaJobFormDetected) return;
     aaAiField = field;
     clearTimeout(aaAiHideTimer);
     aaAiBtn.classList.remove("aa-field-ai--busy");
@@ -1598,6 +1600,12 @@
     if (!aaAiBtn) return;
     aaAiBtn.style.display = "none";
     aaAiField = null;
+  }
+
+  function aaSetJobFormDetected(detected) {
+    aaJobFormDetected = !!detected;
+    if (!aaJobFormDetected) aaHideAiBtn();
+    else if (aaAiField && aaIsAiTextField(aaAiField) && document.activeElement === aaAiField) aaShowAiBtn(aaAiField);
   }
 
   function aaAiNote(text, kind) {
@@ -1678,7 +1686,7 @@
 
     document.addEventListener("focusin", function (e) {
       const t = e.target;
-      if (aaIsAiTextField(t)) aaShowAiBtn(t);
+      if (aaJobFormDetected && aaIsAiTextField(t)) aaShowAiBtn(t);
       else if (t !== aaAiBtn) aaHideAiBtn();
     }, true);
     document.addEventListener("focusout", function (e) {
@@ -1697,6 +1705,7 @@
       aaLoadSettings().then(function (settings) {
         const allowed = aaDetectionAllowed(settings);
         const r = allowed ? aaPageHasForm(settings) : { has: false, count: 0 };
+        aaSetJobFormDetected(!!(allowed && r.has));
         sendResponse({ allowed: allowed, has: r.has, count: r.count, host: aaTopHost() });
       }).catch(function () { sendResponse({ allowed: false, has: false, count: 0 }); });
       return true;
