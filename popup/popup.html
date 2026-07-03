@@ -6,15 +6,15 @@
   <link rel="stylesheet" href="popup.css" />
 </head>
 
-<body>
-  <div class="header">
-    <img class="logo" src="../icons/icon48.png" alt="AutoApply" />
+<body class="aa-ext-popup">
+  <div class="aa-header">
+    <img class="aa-logo" src="../icons/icon48.png" alt="AutoApply" />
     <div>
-      <div class="title">AutoApply</div>
-      <div class="subtitle">Form autofiller</div>
+      <div class="aa-title">AutoApply</div>
+      <div class="aa-subtitle">Form autofiller</div>
     </div>
-    <button id="openSettingsBtn" class="header__settings" title="Open settings" aria-label="Open settings"><svg
-        class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+    <button id="openSettingsBtn" class="aa-header__settings" title="Open settings" aria-label="Open settings"><svg
+        class="aa-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
         stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="3"></circle>
         <path
@@ -23,37 +23,37 @@
       </svg></button>
   </div>
 
-  <label class="field-label" for="profileSelect">Active profile</label>
+  <label class="aa-field-label" for="profileSelect">Active profile</label>
   <select id="profileSelect"></select>
-  <button id="editProfileBtn" class="link"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+  <button id="editProfileBtn" class="aa-link"><svg class="aa-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <path d="M12 20h9"></path>
       <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
     </svg><span>Edit profile data</span></button>
 
-  <div class="quick" id="quick">
-    <div class="quick__cv">
-      <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+  <div class="aa-quick" id="quick">
+    <div class="aa-quick__cv">
+      <svg class="aa-ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
         stroke-linejoin="round" aria-hidden="true">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
         <polyline points="14 2 14 8 20 8"></polyline>
       </svg>
-      <span class="quick__cv-name" id="cvBadge">No CV attached</span>
+      <span class="aa-quick__cv-name" id="cvBadge">No CV attached</span>
     </div>
-    <div class="quick__filled" id="lastFilled"></div>
+    <div class="aa-quick__filled" id="lastFilled"></div>
   </div>
 
-  <div class="tabs">
-    <button class="tab active" data-tab="apply" id="tabApply">Apply</button>
-    <button class="tab" data-tab="jobs" id="tabJobs">Find jobs</button>
+  <div class="aa-tabs">
+    <button class="aa-tab aa-active" data-tab="apply" id="tabApply">Apply</button>
+    <button class="aa-tab" data-tab="jobs" id="tabJobs">Find jobs</button>
   </div>
 
-  <div id="panel-apply" class="panel">
-    <button id="fillBtn" class="primary"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+  <div id="panel-apply" class="aa-panel">
+    <button id="fillBtn" class="aa-primary"><svg class="aa-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"
         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
       </svg><span>Fill this page</span></button>
-    <button id="selectFieldsBtn" class="secondary"><svg class="ico" viewBox="0 0 24 24" fill="none"
+    <button id="selectFieldsBtn" class="aa-secondary"><svg class="aa-ico" viewBox="0 0 24 24" fill="none"
         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="10"></circle>
         <line x1="22" y1="12" x2="18" y2="12"></line>
@@ -61,31 +61,31 @@
         <line x1="12" y1="6" x2="12" y2="2"></line>
         <line x1="12" y1="22" x2="12" y2="18"></line>
       </svg><span>Select fields to fill</span></button>
-    <button id="analyzeBtn" class="secondary"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    <button id="analyzeBtn" class="aa-secondary"><svg class="aa-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"
         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="10"></circle>
         <circle cx="12" cy="12" r="6"></circle>
         <circle cx="12" cy="12" r="2"></circle>
       </svg><span>Analyze this job</span></button>
-    <button id="coverLetterBtn" class="secondary"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    <button id="coverLetterBtn" class="aa-secondary"><svg class="aa-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"
         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <rect x="2" y="4" width="20" height="16" rx="2"></rect>
         <path d="m22 7-10 5L2 7"></path>
       </svg><span>Email &amp; cover letter</span></button>
   </div>
 
-  <div id="panel-jobs" class="panel hidden">
-    <div class="jobs">
-      <input id="jobRole" class="jobs-input" placeholder="Role e.g. software engineer" />
-      <input id="jobLocation" class="jobs-input" placeholder="Location e.g. Pakistan" />
-      <div class="jobs-sites">
+  <div id="panel-jobs" class="aa-panel aa-hidden">
+    <div class="aa-jobs">
+      <input id="jobRole" class="aa-jobs-input" placeholder="Role e.g. software engineer" />
+      <input id="jobLocation" class="aa-jobs-input" placeholder="Location e.g. Pakistan" />
+      <div class="aa-jobs-sites">
         <label><input type="checkbox" id="site-lever" /> Lever</label>
         <label><input type="checkbox" id="site-greenhouse" /> Greenhouse</label>
         <label><input type="checkbox" id="site-ashby" /> Ashby</label>
         <label><input type="checkbox" id="site-workable" /> Workable</label>
         <label><input type="checkbox" id="site-indeed" /> Indeed</label>
       </div>
-      <button id="findJobsBtn" class="secondary"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      <button id="findJobsBtn" class="aa-secondary"><svg class="aa-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -93,7 +93,7 @@
     </div>
   </div>
 
-  <div id="status" class="status"></div>
+  <div id="status" class="aa-status"></div>
 
   <script src="../lib/fields.js"></script>
   <script src="../lib/storage.js"></script>

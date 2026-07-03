@@ -247,12 +247,12 @@
   letter-spacing: 0.03em !important;
 }
 
-#autoapply-panel .aa-review-badge.high {
+#autoapply-panel .aa-review-badge.aa-badge-high {
   background: #d1fae5 !important;
   color: #047857 !important;
 }
 
-#autoapply-panel .aa-review-badge.guess {
+#autoapply-panel .aa-review-badge.aa-badge-guess {
   background: #fef3c7 !important;
   color: #b45309 !important;
 }
@@ -659,7 +659,13 @@
 }
 
 /* v1.18 deliberate product UI refresh: workbench, not generic AI gloss */
-:root {
+#autoapply-panel,
+#aa-detect-toast,
+#aa-field-ai,
+#aa-field-ai-note,
+#aa-lasso-overlay,
+#aa-lasso-hint,
+#aa-lasso-rect {
   --aa-ink: oklch(0.22 0.025 250);
   --aa-muted: oklch(0.48 0.025 250);
   --aa-line: oklch(0.88 0.018 250);
@@ -670,22 +676,22 @@
   --aa-focus: oklch(0.62 0.16 245);
   --aa-radius: 10px;
 }
-button, select, input, textarea { min-height: 44px; }
-button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--aa-focus) !important; outline-offset: 2px !important; }
-.primary, .btn--primary { background: var(--aa-accent) !important; color: var(--aa-accent-ink) !important; border-radius: var(--aa-radius) !important; box-shadow: none !important; }
-.secondary, .btn--ghost, .btn--add { border: 1px solid var(--aa-line) !important; background: var(--aa-field) !important; color: var(--aa-ink) !important; border-radius: var(--aa-radius) !important; }
-.secondary:hover, .btn--ghost:hover, .btn--add:hover { background: oklch(0.955 0.018 250) !important; }
-.autoapply-filled { outline-color: var(--aa-focus) !important; background-color: oklch(0.94 0.04 245 / .65) !important; }
+/* Scoped to AutoApply's own injected UI only, so host-page controls are never restyled. */
+#autoapply-panel button, #autoapply-panel select, #autoapply-panel input, #autoapply-panel textarea { min-height: 44px; }
+#autoapply-panel button:focus-visible, #autoapply-panel select:focus-visible, #autoapply-panel input:focus-visible, #autoapply-panel textarea:focus-visible, #autoapply-panel [tabindex]:focus-visible,
+#aa-detect-toast button:focus-visible, #aa-field-ai:focus-visible { outline: 3px solid var(--aa-focus) !important; outline-offset: 2px !important; }
+/* Removed dead .primary / .secondary / .btn--primary / .btn--ghost / .btn--add rules:
+   the injected panel styles its own controls with aa- prefixed classes (aa-btn-primary,
+   aa-btn-ghost, etc.), so no generic class names remain in the host-injected stylesheet. */
+.autoapply-filled { outline-color: oklch(0.62 0.16 245) !important; background-color: oklch(0.94 0.04 245 / .65) !important; }
 #autoapply-panel { z-index: 500 !important; border-radius: 14px !important; border-color: var(--aa-line) !important; box-shadow: 0 18px 50px rgba(20, 31, 54, .16) !important; color: var(--aa-ink) !important; }
 #autoapply-panel .aa-head { background: oklch(0.24 0.035 250) !important; border-radius: 14px 14px 0 0 !important; }
 #autoapply-panel .aa-score-num { font-variant-numeric: tabular-nums !important; }
 #autoapply-panel .aa-score-label { text-transform: none !important; letter-spacing: 0 !important; }
 
-.profile-group { border:1px solid var(--aa-line); border-radius:14px; background:#fff; margin:14px 0; padding:0; overflow:hidden; }
-.profile-group__summary { cursor:pointer; list-style:none; padding:14px 16px; font-weight:700; color:var(--aa-ink); border-bottom:1px solid var(--aa-line); }
-.profile-group[open] .profile-group__summary { background:oklch(0.97 0.008 250); }
-.profile-group .field-grid, .profile-group .repeater-card { margin:16px; }
-.validation-box { border:1px solid oklch(0.72 0.12 25); background:oklch(0.96 0.035 25); color:oklch(0.34 0.12 25); border-radius:10px; padding:10px 12px; margin-bottom:12px; }
+/* Removed .profile-group / .field-grid / .repeater-card / .validation-box rules:
+   these belong to the options page (defined in options/options.css) and must not
+   be injected into host pages via content.css, where they leaked onto arbitrary sites. */
 #aa-detect-toast .aa-detect-toast__actions { display:flex !important; gap:8px !important; }
 #aa-detect-toast .aa-detect-toast__btn--ghost { background:#fff !important; color:var(--aa-ink) !important; border:1px solid var(--aa-line) !important; }
 

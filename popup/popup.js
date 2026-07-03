@@ -14,7 +14,7 @@ const BOARDS = {
 function setStatus(text, kind) {
   const s = document.getElementById("status");
   s.textContent = text;
-  s.className = "status " + (kind || "");
+  s.className = "aa-status " + (kind ? "aa-" + kind : "");
 }
 
 // Send a message to the page's content script. If it is not loaded yet
@@ -63,8 +63,8 @@ async function init() {
     aaGetResume(pid).then(function (cv) {
       const b = document.getElementById("cvBadge");
       if (!b) return;
-      if (cv && cv.name) { b.textContent = cv.name; b.title = cv.name; b.className = "quick__cv-name quick__cv-name--set"; }
-      else { b.textContent = "No CV attached"; b.title = ""; b.className = "quick__cv-name"; }
+      if (cv && cv.name) { b.textContent = cv.name; b.title = cv.name; b.className = "aa-quick__cv-name aa-quick__cv-name--set"; }
+      else { b.textContent = "No CV attached"; b.title = ""; b.className = "aa-quick__cv-name"; }
     }).catch(function () { /* ignore */ });
   }
   function refreshQuick() {
@@ -199,14 +199,14 @@ document.getElementById("findJobsBtn").addEventListener("click", async function 
 });
 
 function setupTabs() {
-  const tabs = document.querySelectorAll(".tab");
+  const tabs = document.querySelectorAll(".aa-tab");
   tabs.forEach(function (t) {
     t.addEventListener("click", function () {
-      tabs.forEach(function (x) { x.classList.remove("active"); });
-      t.classList.add("active");
+      tabs.forEach(function (x) { x.classList.remove("aa-active"); });
+      t.classList.add("aa-active");
       const name = t.getAttribute("data-tab");
-      document.getElementById("panel-apply").classList.toggle("hidden", name !== "apply");
-      document.getElementById("panel-jobs").classList.toggle("hidden", name !== "jobs");
+      document.getElementById("panel-apply").classList.toggle("aa-hidden", name !== "apply");
+      document.getElementById("panel-jobs").classList.toggle("aa-hidden", name !== "jobs");
     });
   });
 }

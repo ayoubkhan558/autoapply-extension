@@ -42,29 +42,29 @@ function renderCompleteness(prof) {
   const pct = total ? Math.round((filled / total) * 100) : 0;
   host.innerHTML = "";
   const bar = document.createElement("div");
-  bar.className = "completeness__bar";
+  bar.className = "aa-completeness__bar";
   const fill = document.createElement("div");
-  fill.className = "completeness__fill";
+  fill.className = "aa-completeness__fill";
   fill.style.width = pct + "%";
   bar.appendChild(fill);
   host.appendChild(bar);
   const pctEl = document.createElement("p");
-  pctEl.className = "completeness__pct";
+  pctEl.className = "aa-completeness__pct";
   pctEl.textContent = pct + "% complete — " + filled + " of " + total + " profile fields filled";
   host.appendChild(pctEl);
   if (missing.length) {
     const wrap = document.createElement("div");
-    wrap.className = "completeness__missing";
+    wrap.className = "aa-completeness__missing";
     missing.forEach(function (m) {
       const chip = document.createElement("span");
-      chip.className = "completeness__chip";
+      chip.className = "aa-completeness__chip";
       chip.textContent = m;
       wrap.appendChild(chip);
     });
     host.appendChild(wrap);
   } else {
     const done = document.createElement("div");
-    done.className = "completeness__done";
+    done.className = "aa-completeness__done";
     done.textContent = "✓ All profile fields are filled.";
     host.appendChild(done);
   }
@@ -133,7 +133,7 @@ function labelize(s) {
 // an array edited as comma-separated text (tagged with data-list for collection).
 function makeRow(labelText, value, data, isLong, isList) {
   const row = document.createElement("div");
-  row.className = "field-grid__row";
+  row.className = "aa-field-grid__row";
   const lbl = document.createElement("label");
   lbl.textContent = labelText;
   row.appendChild(lbl);
@@ -147,15 +147,15 @@ function makeRow(labelText, value, data, isLong, isList) {
   }
   input.value = (value === null || value === undefined) ? "" : value;
   row.appendChild(input);
-  if (isLong) row.classList.add("field-grid__row--full");
+  if (isLong) row.classList.add("aa-field-grid__row--full");
   return row;
 }
 
 function makeHeader(text) {
   const head = document.createElement("div");
-  head.className = "section-head";
+  head.className = "aa-section-head";
   const h = document.createElement("h2");
-  h.className = "section-head__title";
+  h.className = "aa-section-head__title";
   h.textContent = text;
   head.appendChild(h);
   return head;
@@ -163,13 +163,13 @@ function makeHeader(text) {
 
 function makeHeaderWithButton(text, btnText, onClick) {
   const head = document.createElement("div");
-  head.className = "section-head";
+  head.className = "aa-section-head";
   const h = document.createElement("h2");
-  h.className = "section-head__title";
+  h.className = "aa-section-head__title";
   h.textContent = text;
   const btn = document.createElement("button");
   btn.type = "button";
-  btn.className = "btn btn--add";
+  btn.className = "aa-btn aa-btn--add";
   btn.textContent = btnText;
   btn.addEventListener("click", onClick);
   head.appendChild(h);
@@ -179,22 +179,22 @@ function makeHeaderWithButton(text, btnText, onClick) {
 
 function renderRepeaterCard(rep, entry, idx) {
   const card = document.createElement("div");
-  card.className = "entry-card";
+  card.className = "aa-entry-card";
   const head = document.createElement("div");
-  head.className = "entry-card__head";
+  head.className = "aa-entry-card__head";
   const title = document.createElement("span");
-  title.className = "entry-card__title";
+  title.className = "aa-entry-card__title";
   title.textContent = rep.itemLabel + " " + (idx + 1);
   const rm = document.createElement("button");
   rm.type = "button";
-  rm.className = "btn btn--remove";
+  rm.className = "aa-btn aa-btn--remove";
   rm.textContent = "Remove";
   rm.addEventListener("click", function () { removeRepeaterEntry(rep.key, idx); });
   head.appendChild(title);
   head.appendChild(rm);
   card.appendChild(head);
   const grid = document.createElement("div");
-  grid.className = "field-grid";
+  grid.className = "aa-field-grid";
   rep.fields.forEach(function (fd) {
     grid.appendChild(makeRow(fd.label, entry[fd.name] || "", { rep: rep.key, index: String(idx), field: fd.name }, fd.long, fd.list));
   });
@@ -204,9 +204,9 @@ function renderRepeaterCard(rep, entry, idx) {
 
 function renderCustomCard(cf, idx) {
   const card = document.createElement("div");
-  card.className = "entry-card";
+  card.className = "aa-entry-card";
   const grid = document.createElement("div");
-  grid.className = "field-grid";
+  grid.className = "aa-field-grid";
   grid.appendChild(makeRow("Field label", cf.label || "", { custom: String(idx), cfield: "label" }, false));
   grid.appendChild(makeRow("Match keywords (comma separated)", cf.match || "", { custom: String(idx), cfield: "match" }, false));
   const valRow = makeRow("Value", cf.value || "", { custom: String(idx), cfield: "value" }, true);
@@ -214,7 +214,7 @@ function renderCustomCard(cf, idx) {
   card.appendChild(grid);
   const rm = document.createElement("button");
   rm.type = "button";
-  rm.className = "btn btn--remove entry-card__remove";
+  rm.className = "aa-btn aa-btn--remove aa-entry-card__remove";
   rm.textContent = "Remove field";
   rm.addEventListener("click", function () { removeCustomField(idx); });
   card.appendChild(rm);
@@ -222,12 +222,12 @@ function renderCustomCard(cf, idx) {
 }
 
 function renderCvProfileBlock(prof) {
-  const block = document.createElement("div"); block.className = "card-block card-block--cv profile-cv";
-  block.innerHTML = '<div class="card-block__title">Profile CV / Resume</div><p class="muted muted--small">Stored per profile and auto-attached to CV/resume upload fields.</p><div class="field-line"><label class="btn btn--ghost btn--file">Choose CV / resume<input type="file" id="profileCvFile" accept=".pdf,.doc,.docx" hidden></label><span id="profileCvStatus" class="status"></span></div><p class="muted muted--small">After choosing a file, click the bottom Save button to save it with this profile.</p>';
+  const block = document.createElement("div"); block.className = "aa-card-block aa-card-block--cv aa-profile-cv";
+  block.innerHTML = '<div class="aa-card-block__title">Profile CV / Resume</div><p class="aa-muted aa-muted--small">Stored per profile and auto-attached to CV/resume upload fields.</p><div class="aa-field-line"><label class="aa-btn aa-btn--ghost aa-btn--file">Choose CV / resume<input type="file" id="profileCvFile" accept=".pdf,.doc,.docx" hidden></label><span id="profileCvStatus" class="aa-status"></span></div><p class="aa-muted aa-muted--small">After choosing a file, click the bottom Save button to save it with this profile.</p>';
   setTimeout(function(){
     const input=document.getElementById("profileCvFile"), st=document.getElementById("profileCvStatus");
-    if(input) input.onchange=function(){ PENDING_CV_FILE = input.files && input.files[0] ? input.files[0] : null; if(st && PENDING_CV_FILE){ st.textContent="Ready to save: "+PENDING_CV_FILE.name; st.className="status"; } };
-    if(prof && prof.id && st) aaGetResume(prof.id).then(function(cv){ if(cv&&cv.name){ st.textContent="Current: "+cv.name; st.className="status success"; } else { st.textContent="No CV saved yet."; st.className="status"; }});
+    if(input) input.onchange=function(){ PENDING_CV_FILE = input.files && input.files[0] ? input.files[0] : null; if(st && PENDING_CV_FILE){ st.textContent="Ready to save: "+PENDING_CV_FILE.name; st.className="aa-status"; } };
+    if(prof && prof.id && st) aaGetResume(prof.id).then(function(cv){ if(cv&&cv.name){ st.textContent="Current: "+cv.name; st.className="aa-status aa-success"; } else { st.textContent="No CV saved yet."; st.className="aa-status"; }});
   },0);
   return block;
 }
@@ -239,38 +239,38 @@ function renderForm() {
   form.innerHTML = "";
 
   const layout = document.createElement("div");
-  layout.className = "profile-fields-layout";
+  layout.className = "aa-profile-fields-layout";
   const nav = document.createElement("div");
-  nav.className = "profile-fields-nav";
+  nav.className = "aa-profile-fields-nav";
   const panels = document.createElement("div");
-  panels.className = "profile-fields-panels";
+  panels.className = "aa-profile-fields-panels";
   layout.appendChild(nav); layout.appendChild(panels);
 
   function addLeftTab(id, label, build, active) {
     const btn = document.createElement("button");
-    btn.type = "button"; btn.className = "profile-field-tab" + (active ? " is-active" : ""); btn.textContent = label;
+    btn.type = "button"; btn.className = "aa-profile-field-tab" + (active ? " aa-is-active" : ""); btn.textContent = label;
     const panel = document.createElement("section");
-    panel.className = "profile-field-panel" + (active ? " is-active" : ""); panel.dataset.panel = id;
+    panel.className = "aa-profile-field-panel" + (active ? " aa-is-active" : ""); panel.dataset.panel = id;
     build(panel);
     btn.addEventListener("click", function(){
-      nav.querySelectorAll(".profile-field-tab").forEach(function(b){ b.classList.remove("is-active"); });
-      panels.querySelectorAll(".profile-field-panel").forEach(function(p){ p.classList.remove("is-active"); });
-      btn.classList.add("is-active"); panel.classList.add("is-active");
+      nav.querySelectorAll(".aa-profile-field-tab").forEach(function(b){ b.classList.remove("aa-is-active"); });
+      panels.querySelectorAll(".aa-profile-field-panel").forEach(function(p){ p.classList.remove("aa-is-active"); });
+      btn.classList.add("aa-is-active"); panel.classList.add("aa-is-active");
     });
     nav.appendChild(btn); panels.appendChild(panel);
   }
 
   addLeftTab("profile", "Profile", function(panel){
-    const metaGrid = document.createElement("div"); metaGrid.className = "field-grid";
+    const metaGrid = document.createElement("div"); metaGrid.className = "aa-field-grid";
     const labelRow = makeRow("Profile label", prof.label || "", { meta: "label" }, false);
-    labelRow.classList.add("field-grid__row--full"); metaGrid.appendChild(labelRow); panel.appendChild(metaGrid);
+    labelRow.classList.add("aa-field-grid__row--full"); metaGrid.appendChild(labelRow); panel.appendChild(metaGrid);
     panel.appendChild(renderCvProfileBlock(prof));
   }, true);
 
   SECTIONS.forEach(function (section) {
     addLeftTab(section.key, section.label, function(panel){
       if (!prof[section.key]) prof[section.key] = {};
-      const grid = document.createElement("div"); grid.className = "field-grid";
+      const grid = document.createElement("div"); grid.className = "aa-field-grid";
       section.fields.forEach(function (fd) { grid.appendChild(makeRow(fd.label, prof[section.key][fd.name] || "", { section: section.key, field: fd.name }, fd.long, fd.list)); });
       panel.appendChild(grid);
     }, false);
@@ -395,7 +395,7 @@ function setStatus(t, kind) {
   const s = document.getElementById("status");
   if (s) {
     s.textContent = t;
-    s.className = "status " + (kind || "");
+    s.className = "aa-status " + (kind ? "aa-" + kind : "");
   }
   let toast = document.getElementById("saveToast");
   if (!toast) {
@@ -406,13 +406,13 @@ function setStatus(t, kind) {
     document.body.appendChild(toast);
   }
   toast.textContent = t || "";
-  toast.className = "save-toast " + (kind || "");
+  toast.className = "aa-save-toast " + (kind ? "aa-" + kind : "");
   if (t) {
-    toast.classList.add("is-visible");
+    toast.classList.add("aa-is-visible");
     clearTimeout(window.__aaSaveStatusTimer);
     window.__aaSaveStatusTimer = setTimeout(function () {
       if (s) s.textContent = "";
-      toast.classList.remove("is-visible");
+      toast.classList.remove("aa-is-visible");
     }, 3500);
   }
 }
@@ -421,14 +421,14 @@ function setRawStatus(t, kind) {
   const s = document.getElementById("rawStatus");
   if (!s) return;
   s.textContent = t;
-  s.className = "raw-status " + (kind || "");
+  s.className = "aa-raw-status " + (kind ? "aa-" + kind : "");
 }
 
 function setAiStatus(t, kind) {
   const s = document.getElementById("aiStatus");
   if (!s) return;
   s.textContent = t;
-  s.className = "status " + (kind || "");
+  s.className = "aa-status " + (kind ? "aa-" + kind : "");
 }
 
 async function save() {
@@ -540,7 +540,7 @@ function setCvStatus(t, kind) {
   const s = document.getElementById("cvStatus");
   if (!s) return;
   s.textContent = t;
-  s.className = "status " + (kind || "");
+  s.className = "aa-status " + (kind ? "aa-" + kind : "");
 }
 
 function aaFileToDataUrl(file) {
@@ -669,7 +669,7 @@ async function init() {
     await aaSaveSettings(s);
     const st = document.getElementById("detectStatus");
     st.textContent = "Saved. Reload open tabs to apply.";
-    st.className = "status success";
+    st.className = "aa-status aa-success";
   });
 
   document.getElementById("resumeFile").addEventListener("change", function () {
@@ -745,22 +745,22 @@ async function init() {
     const w = document.getElementById("rawWrap");
     collectForm();
     renderRaw();
-    w.classList.toggle("hidden");
+    w.classList.toggle("aa-hidden");
   });
 
   setupSettingsTabs();
 }
 
 function setupSettingsTabs() {
-  const items = document.querySelectorAll(".nav-item");
-  const panels = document.querySelectorAll(".tab-panel");
+  const items = document.querySelectorAll(".aa-nav-item");
+  const panels = document.querySelectorAll(".aa-tab-panel");
   const titleEl = document.getElementById("panelTitle");
   items.forEach(function (it) {
     it.addEventListener("click", function () {
       const name = it.getAttribute("data-tab");
-      items.forEach(function (x) { x.classList.toggle("nav-item--active", x === it); });
-      panels.forEach(function (p) { p.classList.toggle("tab-panel--active", p.getAttribute("data-panel") === name); });
-      if (titleEl) { const lbl = it.querySelector(".nav-item__label"); if (lbl) titleEl.textContent = lbl.textContent; }
+      items.forEach(function (x) { x.classList.toggle("aa-nav-item--active", x === it); });
+      panels.forEach(function (p) { p.classList.toggle("aa-tab-panel--active", p.getAttribute("data-panel") === name); });
+      if (titleEl) { const lbl = it.querySelector(".aa-nav-item__label"); if (lbl) titleEl.textContent = lbl.textContent; }
     });
   });
 }
