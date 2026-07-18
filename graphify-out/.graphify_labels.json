@@ -1,0 +1,18 @@
+{
+  "0": "options.js",
+  "1": "manifest.json",
+  "2": "content.js",
+  "3": "aaEl",
+  "4": "ai.js",
+  "5": "AutoApply — Form Autofiller (Chrome Extension)",
+  "6": "getLabelText",
+  "7": "storage.js",
+  "8": "extract.js",
+  "9": "aaFillSingleField",
+  "13": "fields.js",
+  "14": "popup.js",
+  "15": "background.js",
+  "16": "aaSetupFieldAi",
+  "17": "matcher.js",
+  "19": "test_fixes.js"
+}

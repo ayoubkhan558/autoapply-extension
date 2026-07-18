@@ -1,0 +1,102 @@
+{
+  "background.js": {
+    "mtime": 1784395935.217841,
+    "ast_hash": "59ab8c414bcf29e9b9f0a84fa2dd5880",
+    "semantic_hash": ""
+  },
+  "content.js": {
+    "mtime": 1784395661.7275872,
+    "ast_hash": "97dd97d8a84152bffa45ec5e317ef66d",
+    "semantic_hash": ""
+  },
+  "data/profile.default.json": {
+    "mtime": 1784395735.3204734,
+    "ast_hash": "22fe11a06b6268b4a26192e2bf2dcea8",
+    "semantic_hash": ""
+  },
+  "lib/ai.js": {
+    "mtime": 1784395730.8230767,
+    "ast_hash": "6aac169fd05d4322ffa634055d7451bc",
+    "semantic_hash": ""
+  },
+  "lib/extract.js": {
+    "mtime": 1783010204.0,
+    "ast_hash": "9bce854a533ff33c571da3b7a30db942",
+    "semantic_hash": ""
+  },
+  "lib/fields.js": {
+    "mtime": 1784395520.505096,
+    "ast_hash": "ae94dfba5eadd34c0c9fa142ffd3ea57",
+    "semantic_hash": ""
+  },
+  "lib/matcher.js": {
+    "mtime": 1783010204.0,
+    "ast_hash": "251ba77f1aa6c72276a6a06bae2a8900",
+    "semantic_hash": ""
+  },
+  "lib/storage.js": {
+    "mtime": 1784395543.858853,
+    "ast_hash": "34d2e759692a841276e2f0d840442625",
+    "semantic_hash": ""
+  },
+  "manifest.json": {
+    "mtime": 1784395759.595834,
+    "ast_hash": "e0ea7027968fb19d3d61ad9948883c4f",
+    "semantic_hash": ""
+  },
+  "options/options.js": {
+    "mtime": 1784395711.599667,
+    "ast_hash": "e601beaf0de83db51bd2f5620875c057",
+    "semantic_hash": ""
+  },
+  "popup/popup.js": {
+    "mtime": 1784394871.5167005,
+    "ast_hash": "97b9c37e623e8330fecb9a4bbb0fd48a",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1783010204.0,
+    "ast_hash": "3da81d4626ddd2a78a54e871892520a7",
+    "semantic_hash": ""
+  },
+  "options/options.html": {
+    "mtime": 1783056818.0,
+    "ast_hash": "6d1bff32c8e8ed4c4c95f64332768cd8",
+    "semantic_hash": ""
+  },
+  "popup/popup.html": {
+    "mtime": 1783056822.0,
+    "ast_hash": "cd00d2983d398e3767faff556ba84ee0",
+    "semantic_hash": ""
+  },
+  "icons/icon128.png": {
+    "mtime": 1783010204.0,
+    "ast_hash": "28fdb63b6eca38d28c9b5f8de61d7d43",
+    "semantic_hash": ""
+  },
+  "icons/icon16.png": {
+    "mtime": 1783010204.0,
+    "ast_hash": "4fb087193a84f0ffbaaa93ffa7a4fe12",
+    "semantic_hash": ""
+  },
+  "icons/icon48.png": {
+    "mtime": 1783010204.0,
+    "ast_hash": "e272d7f88fedad1b98b29383e82172ef",
+    "semantic_hash": ""
+  },
+  "test_fixes.js": {
+    "mtime": 1784395959.3572628,
+    "ast_hash": "1e7387270972cb14b0f92adba9f93d51",
+    "semantic_hash": ""
+  },
+  "DESIGN.md": {
+    "mtime": 1784394799.4800227,
+    "ast_hash": "09a55100d0add1e7fcac36d1359a748c",
+    "semantic_hash": ""
+  },
+  "PRODUCT.md": {
+    "mtime": 1784395065.732479,
+    "ast_hash": "cf949e482c65487417e112a2584a5de3",
+    "semantic_hash": ""
+  }
+}
