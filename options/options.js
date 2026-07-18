@@ -118,6 +118,24 @@ async function loadModels(preferred) {
   }
 }
 
+// Inline feather-style icons for the Profile section's left subtabs, keyed by
+// section id. Unknown ids fall back to a generic dot.
+const AA_TAB_ICONS = {
+  profile: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"></path></svg>',
+  personal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><path d="M13 9h5M13 13h5M5 16c1-2 5-2 6 0"></path></svg>',
+  address: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>',
+  links: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1"></path><path d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1"></path></svg>',
+  professional: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"></rect><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>',
+  experience: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"></rect><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18"></path></svg>',
+  education: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4 2 9l10 5 10-5-10-5z"></path><path d="M6 11v5c0 1 3 3 6 3s6-2 6-3v-5"></path></svg>',
+  projects: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h5l2 2h11v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>',
+  certifications: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5"></circle><path d="M9 13l-1 8 4-2 4 2-1-8"></path></svg>',
+  awards: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v5a6 6 0 0 1-12 0z"></path><path d="M9 20h6M12 14v6M4 4h2v3a3 3 0 0 1-2-3zM20 4h-2v3a3 3 0 0 0 2-3z"></path></svg>',
+  volunteering: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.5-9-9a4.5 4.5 0 0 1 9-2 4.5 4.5 0 0 1 9 2c-2 4.5-9 9-9 9z"></path></svg>',
+  custom: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18"></path></svg>',
+  _default: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle></svg>'
+};
+
 function activeProfile() {
   return DATA.profiles.find(function (p) { return p.id === DATA.activeProfileId; }) || DATA.profiles[0];
 }
@@ -230,16 +248,18 @@ function renderCvProfileBlock(prof) {
     '<div class="aa-field-line"><label class="aa-btn aa-btn--ghost aa-btn--file">Choose CV / resume<input type="file" id="profileCvFile" accept=".pdf,.doc,.docx" hidden></label><span id="profileCvStatus" class="aa-status"></span></div>' +
     '<div class="aa-card-block__title">Profile picture</div>' +
     '<p class="aa-muted aa-muted--small">Attached to photo / picture upload fields on application forms.</p>' +
+    '<img id="profilePhotoPreview" class="aa-photo-preview" alt="Profile picture preview" style="display:none">' +
     '<div class="aa-field-line"><label class="aa-btn aa-btn--ghost aa-btn--file">Choose photo<input type="file" id="profilePhotoFile" accept="image/*" hidden></label><button type="button" id="profilePhotoRemove" class="aa-btn aa-btn--ghost">Remove</button><span id="profilePhotoStatus" class="aa-status"></span></div>' +
     '<p class="aa-muted aa-muted--small">After choosing a file, click the bottom Save button to save it with this profile.</p>';
   setTimeout(function(){
     const input=document.getElementById("profileCvFile"), st=document.getElementById("profileCvStatus");
     if(input) input.onchange=function(){ PENDING_CV_FILE = input.files && input.files[0] ? input.files[0] : null; if(st && PENDING_CV_FILE){ st.textContent="Ready to save: "+PENDING_CV_FILE.name; st.className="aa-status"; } };
     if(prof && prof.id && st) aaGetResume(prof.id).then(function(cv){ if(cv&&cv.name){ st.textContent="Current: "+cv.name; st.className="aa-status aa-success"; } else { st.textContent="No CV saved yet."; st.className="aa-status"; }});
-    const pin=document.getElementById("profilePhotoFile"), pst=document.getElementById("profilePhotoStatus"), prm=document.getElementById("profilePhotoRemove");
-    if(pin) pin.onchange=function(){ PENDING_PHOTO_FILE = pin.files && pin.files[0] ? pin.files[0] : null; if(pst && PENDING_PHOTO_FILE){ pst.textContent="Ready to save: "+PENDING_PHOTO_FILE.name; pst.className="aa-status"; } };
-    if(prm) prm.onclick=function(){ PENDING_PHOTO_FILE=null; if(pin) pin.value=""; if(prof && prof.id) aaRemovePhoto(prof.id).then(function(){ if(pst){ pst.textContent="Photo removed."; pst.className="aa-status"; } }); };
-    if(prof && prof.id && pst) aaGetPhoto(prof.id).then(function(ph){ if(ph&&ph.name){ pst.textContent="Current: "+ph.name; pst.className="aa-status aa-success"; } else { pst.textContent="No photo saved."; pst.className="aa-status"; }});
+    const pin=document.getElementById("profilePhotoFile"), pst=document.getElementById("profilePhotoStatus"), prm=document.getElementById("profilePhotoRemove"), prev=document.getElementById("profilePhotoPreview");
+    function showPreview(src){ if(!prev) return; if(src){ prev.src=src; prev.style.display=""; } else { prev.removeAttribute("src"); prev.style.display="none"; } }
+    if(pin) pin.onchange=function(){ PENDING_PHOTO_FILE = pin.files && pin.files[0] ? pin.files[0] : null; if(PENDING_PHOTO_FILE){ showPreview(URL.createObjectURL(PENDING_PHOTO_FILE)); if(pst){ pst.textContent="Ready to save: "+PENDING_PHOTO_FILE.name; pst.className="aa-status"; } } };
+    if(prm) prm.onclick=function(){ PENDING_PHOTO_FILE=null; if(pin) pin.value=""; showPreview(null); if(prof && prof.id) aaRemovePhoto(prof.id).then(function(){ if(pst){ pst.textContent="Photo removed."; pst.className="aa-status"; } }); };
+    if(prof && prof.id && pst) aaGetPhoto(prof.id).then(function(ph){ if(ph&&ph.name){ pst.textContent="Current: "+ph.name; pst.className="aa-status aa-success"; showPreview(ph.dataUrl); } else { pst.textContent="No photo saved."; pst.className="aa-status"; }});
   },0);
   return block;
 }
@@ -260,7 +280,10 @@ function renderForm() {
 
   function addLeftTab(id, label, build, active) {
     const btn = document.createElement("button");
-    btn.type = "button"; btn.className = "aa-profile-field-tab" + (active ? " aa-is-active" : ""); btn.textContent = label;
+    btn.type = "button"; btn.className = "aa-profile-field-tab" + (active ? " aa-is-active" : "");
+    const ic = document.createElement("span"); ic.className = "aa-profile-field-tab__icon"; ic.innerHTML = AA_TAB_ICONS[id] || AA_TAB_ICONS._default;
+    const tx = document.createElement("span"); tx.textContent = label;
+    btn.appendChild(ic); btn.appendChild(tx);
     const panel = document.createElement("section");
     panel.className = "aa-profile-field-panel" + (active ? " aa-is-active" : ""); panel.dataset.panel = id;
     build(panel);
@@ -736,6 +759,25 @@ async function init() {
     renderRaw();
     PENDING_CV_FILE = null;
     PENDING_PHOTO_FILE = null;
+  });
+
+  document.getElementById("dupProfile").addEventListener("click", async function () {
+    collectForm();
+    const src = activeProfile();
+    const copy = JSON.parse(JSON.stringify(src));
+    copy.id = "profile-" + Date.now();
+    copy.label = (src.label || "Profile") + " (copy)";
+    DATA.profiles.push(copy);
+    DATA.activeProfileId = copy.id;
+    // Per-profile CV/photo live in separate storage keyed by id; copy them too.
+    try { const cv = await aaGetResume(src.id); if (cv) await aaSetResume(copy.id, cv); } catch (e) { /* ignore */ }
+    try { const ph = await aaGetPhoto(src.id); if (ph) await aaSetPhoto(copy.id, ph); } catch (e) { /* ignore */ }
+    renderProfiles();
+    renderForm();
+    renderRaw();
+    PENDING_CV_FILE = null;
+    PENDING_PHOTO_FILE = null;
+    setStatus("Duplicated \u2014 remember to Save", "success");
   });
 
   document.getElementById("saveBtn").addEventListener("click", save);

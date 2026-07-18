@@ -13,6 +13,7 @@ global.chrome = {
   runtime: { getURL: (p) => p }
 };
 vm.runInThisContext(fs.readFileSync("lib/fields.js", "utf8"));
+vm.runInThisContext(fs.readFileSync("lib/matcher.js", "utf8"));
 vm.runInThisContext(fs.readFileSync("lib/storage.js", "utf8"));
 
 (async function () {
@@ -40,6 +41,18 @@ vm.runInThisContext(fs.readFileSync("lib/storage.js", "utf8"));
   assert(p.personal.firstName === "A", "non-address personal values untouched");
   assert(p.links && "facebook" in p.links, "facebook backfilled into links");
   assert("preferredTeams" in p.professional, "preferredTeams backfilled");
+
+  // Zoho CRUX fields: label from cx-prop-label + attr from data-zcqa resolve
+  // to the address keys (this is what the closest() lookups now feed in).
+  const zoho = [
+    { text: "Zip/Postal Code", attr: "rec_Zip_Code manual_Zip_Code", key: "address.zip" },
+    { text: "City", attr: "rec_City manual_City", key: "address.city" },
+    { text: "State/Province", attr: "rec_State manual_State", key: "address.state" }
+  ];
+  zoho.forEach(function (z) {
+    const m = AutoApplyMatcher.match({ text: z.text, attr: z.attr });
+    assert(m.key === z.key && m.score >= 0.6, z.text + " -> " + m.key + " (" + m.score + ")");
+  });
 
   console.log("test_fixes.js: all checks passed");
 })();

@@ -272,6 +272,13 @@
       node = node.parentElement;
       if (node && /^(FORM|BODY|MAIN)$/.test(node.tagName || "")) break;
     }
+    // Custom-widget wrappers (Zoho CRUX, etc.) carry the real label on an
+    // ancestor many levels above the raw <input>, out of reach of the fixed-
+    // depth walk above. closest() reaches it at any depth.
+    try {
+      const propEl = el.closest && el.closest("[cx-prop-label]");
+      if (propEl) { const pl = propEl.getAttribute("cx-prop-label"); if (pl) parts.push(pl); }
+    } catch (e) { /* ignore */ }
     // Fallback: nearest descriptive text in the surrounding row/group.
     if (parts.join("").replace(/[^a-z0-9]/gi, "").length < 2) {
       const near = nearestLabel(el);
@@ -300,6 +307,16 @@
       node = node.parentElement;
       if (node && /^(FORM|BODY|MAIN|SECTION)$/.test(node.tagName || "")) break;
     }
+    // Custom-widget identity attrs live on an ancestor far above the input
+    // (Zoho CRUX: data-zcqa="rec_Zip_Code", cx-prop-name, cx-prop-zcqa).
+    try {
+      const idEl = el.closest && el.closest("[data-zcqa], [cx-prop-zcqa], [cx-prop-name]");
+      if (idEl) {
+        ["data-zcqa", "cx-prop-zcqa", "cx-prop-name"].forEach(function (a) {
+          const v = idEl.getAttribute(a); if (v) vals.push(v);
+        });
+      }
+    } catch (e) { /* ignore */ }
     return vals.join(" ");
   }
 
@@ -756,6 +773,8 @@
     }
     const wrapLabel = el.closest("label");
     if (wrapLabel) t += " " + wrapLabel.textContent;
+    const propEl = el.closest && el.closest("[cx-prop-label]");
+    if (propEl) t += " " + (propEl.getAttribute("cx-prop-label") || "");
     const near = nearestLabel(el);
     if (near) t += " " + near;
     return t.replace(/\s+/g, " ").trim();

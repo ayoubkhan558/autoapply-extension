@@ -96,7 +96,7 @@
   background: transparent; font-weight: 400; font-size: 12px; color: var(--aa-muted);
 }
 .aa-ext-popup .aa-tab.aa-active { background: var(--aa-surface); color: var(--aa-ink); font-weight: 600; }
-.aa-ext-popup .aa-tab:hover:not(.aa-active) { color: var(--aa-ink); }
+.aa-ext-popup .aa-tab:hover:not(.aa-active) { background: rgba(255, 255, 255, 0.6); color: var(--aa-ink); }
 
 .aa-ext-popup .aa-hidden { display: none; }
 
