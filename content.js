@@ -172,11 +172,16 @@
     const flat = {};
     function put(key, val) { flat[key] = Array.isArray(val) ? val.filter(Boolean).join(", ") : val; }
     // Flat sections.
-    ["personal", "links", "professional"].forEach(function (sec) {
+    ["personal", "address", "links", "professional"].forEach(function (sec) {
       const obj = profile[sec];
       if (obj && typeof obj === "object") {
         for (const k in obj) { if (Object.prototype.hasOwnProperty.call(obj, k)) put(sec + "." + k, obj[k]); }
       }
+    });
+    // Profiles saved before v1.25 keep address values under personal.*; alias
+    // them so address.* matcher keys still resolve without a migration pass.
+    ["address1", "address2", "currentAddress", "permanentAddress", "city", "state", "zip", "country"].forEach(function (k) {
+      if (!flat["address." + k] && flat["personal." + k]) flat["address." + k] = flat["personal." + k];
     });
     // Repeating sections: only the first entry is auto-filled.
     ["experience", "education", "projects", "certifications", "awards", "volunteering"].forEach(function (sec) {
@@ -704,6 +709,28 @@
     return { kind: "resume", el: target, label: "Attach CV: " + (stored.name || "resume"), value: (stored.name || "resume"), score: 0.9, editable: false, stored: stored };
   }
 
+  // Attach the profile photo to photo/picture/avatar upload fields.
+  async function planPhoto() {
+    let stored = null;
+    try {
+      const res = await chrome.storage.local.get(STORAGE_KEY);
+      const data = res && res[STORAGE_KEY];
+      stored = await aaGetPhoto(data && data.activeProfileId);
+    } catch (e) { stored = null; }
+    if (!stored || !stored.dataUrl) return null;
+    const inputs = collectControls().filter(function (el) { return (el.type || "").toLowerCase() === "file" && !el.disabled; });
+    for (let i = 0; i < inputs.length; i++) {
+      const el = inputs[i];
+      const lbl = norm(getLabelText(el) + " " + getAttrText(el));
+      if (/resume|cv|curriculum/.test(lbl)) continue;
+      const wantsImage = (el.accept || "").indexOf("image") !== -1;
+      if (/photo|picture|avatar|headshot|profile image|profileimage/.test(lbl) || wantsImage) {
+        return { kind: "resume", el: el, label: "Attach photo: " + (stored.name || "photo"), value: stored.name || "photo", score: 0.9, editable: false, stored: stored };
+      }
+    }
+    return null;
+  }
+
   // ---- Custom dropdown (non-native select) support --------------------
   function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
@@ -784,18 +811,105 @@
             if (pv && (ot.indexOf(pv) !== -1 || pv.indexOf(ot) !== -1)) picked = o;
           }
         });
-        const choose = exact || picked;
-        if (choose) {
-          choose.click();
+        const picks = [];
+        if (exact || picked) picks.push(exact || picked);
+        else {
+          // Token fallback: "PHP, Laravel" picks each matching option (covers
+          // multi-selects like Zoho's "Preferred Team / Department (Pick up to 2)").
+          const tokens = valTokens(best.value);
+          optionNodes.forEach(function (o) {
+            if (picks.length >= 3 || aaIsHidden(o)) return;
+            const ot = norm(o.textContent);
+            if (!ot || ot.length > 60) return;
+            const hit = tokens.some(function (tk) { return tk.length >= 3 && (ot === tk || ot.indexOf(tk) !== -1 || tk.indexOf(ot) !== -1); });
+            if (hit && picks.indexOf(o) === -1) picks.push(o);
+          });
+        }
+        if (picks.length) {
+          for (let pi = 0; pi < picks.length; pi++) { picks[pi].click(); await sleep(90); }
           markFilled(trg, best.score);
           filled++;
           if (filledEls) filledEls.push(trg);
-          await sleep(90);
         } else {
           trg.click();
           await sleep(60);
         }
       } catch (e) { /* ignore */ }
+    }
+    return filled;
+  }
+
+  // ---- Repeating sections (education / experience) ---------------------
+  // Some forms hide these behind an "Add Educational Details" style button and
+  // let you add multiple rows. Click the button per saved record, then fill
+  // the newly-revealed empty fields from that record.
+  function aaRepeaterEmpties(groupKey) {
+    const out = [];
+    collectControls().forEach(function (el) {
+      const t = (el.type || "").toLowerCase();
+      if (t === "radio" || t === "checkbox" || !isFillable(el)) return;
+      if (el.tagName !== "SELECT" && el.value && el.value.trim()) return;
+      if (el.tagName === "SELECT" && el.selectedIndex > 0) return;
+      const sig = { text: getLabelText(el), attr: getAttrText(el) };
+      const m = AutoApplyMatcher.match(sig);
+      if (m.key && m.score >= 0.6 && m.key.indexOf(groupKey + ".") === 0) {
+        out.push({ el: el, name: m.key.slice(groupKey.length + 1), sig: sig });
+      }
+    });
+    return out;
+  }
+
+  function aaFindAddButton(re) {
+    let nodes;
+    try { nodes = document.querySelectorAll('button, a, [role="button"], input[type="button"]'); } catch (e) { nodes = []; }
+    for (let i = 0; i < nodes.length; i++) {
+      const el = nodes[i];
+      if (aaIsHidden(el)) continue;
+      const t = norm(aaText(el) || el.value || el.getAttribute("aria-label") || "");
+      if (t && t.length <= 60 && re.test(t)) return el;
+    }
+    return null;
+  }
+
+  async function fillRepeaterSections(ctx) {
+    const groups = [
+      { key: "education", re: /(add|new|\+).{0,20}(education|qualification|academic|degree|school)|educational details/ },
+      { key: "experience", re: /(add|new|\+).{0,20}(experience|employment|position|job|work)|employment details|work history/ }
+    ];
+    let filled = 0;
+    for (let g = 0; g < groups.length; g++) {
+      const grp = groups[g];
+      const list = Array.isArray(ctx.profile[grp.key]) ? ctx.profile[grp.key] : [];
+      const entries = list.filter(function (e) {
+        return e && Object.keys(e).some(function (k) { return String(e[k] || "").trim(); });
+      });
+      if (!entries.length) continue;
+      // If the section's fields are already on the page, the main pass filled
+      // entry 0 into them; each further entry needs one click of the add
+      // button. If no fields exist yet, the whole section is behind the
+      // button, so entry 0 needs a click too.
+      const hasFields = collectControls().some(function (el) {
+        const m = AutoApplyMatcher.match({ text: getLabelText(el), attr: getAttrText(el) });
+        return m.key && m.score >= 0.6 && m.key.indexOf(grp.key + ".") === 0;
+      });
+      for (let i = hasFields ? 1 : 0; i < entries.length && i < 10; i++) {
+        const btn = aaFindAddButton(grp.re);
+        if (!btn) break;
+        try { btn.click(); } catch (e) { break; }
+        await sleep(700);
+        const empties = aaRepeaterEmpties(grp.key);
+        if (!empties.length) break;
+        let any = false;
+        const entry = entries[i];
+        empties.forEach(function (c) {
+          let v = entry[c.name];
+          if (Array.isArray(v)) v = v.filter(Boolean).join(", ");
+          if (v === undefined || v === null || String(v).trim() === "") return;
+          v = transformValue(c.el, c.sig, String(v));
+          if (applyTextValue(c.el, String(v), 0.85)) { filled++; any = true; }
+        });
+        if (!any) break; // nothing matched this round; stop instead of clicking forever
+      }
     }
     return filled;
   }
@@ -816,8 +930,11 @@
       if (applyCheck(p.el, p.score)) filled++;
     });
     try { filled += await fillCustomSelects(ctx); } catch (e) { /* ignore */ }
+    try { filled += await fillRepeaterSections(ctx); } catch (e) { /* ignore */ }
     const resume = await planResume();
     if (resume) { try { if (await applyResume(resume)) filled++; } catch (e) { /* ignore */ } }
+    const photo = await planPhoto();
+    if (photo) { try { if (await applyResume(photo)) filled++; } catch (e) { /* ignore */ } }
     try { aaShowFillResult(filled, aaUnfilledFields(controls, true)); } catch (e) { /* ignore */ }
     if (filled > 0) { try { aaRecordFill(aaTopHost(), filled); } catch (e) { /* ignore */ } }
     return { filled: filled };
@@ -1023,15 +1140,13 @@
   async function runAnalysis() {
     const body = aaShowPanel();
     aaRenderEffort(body, aaEffortScore());
-    let settings, data;
-    try { settings = await aaLoadSettings(); data = await aaLoadData(); }
+    let data;
+    try { data = await aaLoadData(); }
     catch (e) { aaRenderError(body, "Could not load your profile or settings."); return; }
-    const provider = settings.provider;
-    const key = settings.keys && settings.keys[provider];
-    if (!key) { aaRenderError(body, "Add an AI key in AutoApply Options to analyze jobs."); return; }
     const profile = aaGetActiveProfile(data);
     aaRenderLoading(body);
-    const payload = { provider: provider, apiKey: key, model: settings.model, jobText: aaJobText(), profile: profile };
+    // The API key never leaves the background worker; it resolves provider/key itself.
+    const payload = { jobText: aaJobText(), profile: profile };
     chrome.runtime.sendMessage({ action: "aa-analyze-job", payload: payload }, function (resp) {
       if (chrome.runtime.lastError) { aaRenderError(body, chrome.runtime.lastError.message); return; }
       if (!resp || !resp.ok) { aaRenderError(body, (resp && resp.error) || "Analysis failed."); return; }
@@ -1083,15 +1198,12 @@
   // Entry point: gather settings + profile + job text, ask the AI, render result.
   async function runGenerateApplication() {
     const body = aaShowPanel("Email & cover letter");
-    let settings, data;
-    try { settings = await aaLoadSettings(); data = await aaLoadData(); }
+    let data;
+    try { data = await aaLoadData(); }
     catch (e) { aaRenderError(body, "Could not load your profile or settings."); return; }
-    const provider = settings.provider;
-    const key = settings.keys && settings.keys[provider];
-    if (!key) { aaRenderError(body, "Add an AI key in AutoApply Options to generate an email and cover letter."); return; }
     const profile = aaGetActiveProfile(data);
     aaRenderLoading(body, ["Reading the job posting\u2026", "Matching your experience\u2026", "Drafting your email\u2026", "Writing your cover letter\u2026", "Polishing the wording\u2026"]);
-    const payload = { provider: provider, apiKey: key, model: settings.model, jobText: aaJobText(), profile: profile };
+    const payload = { jobText: aaJobText(), profile: profile };
     chrome.runtime.sendMessage({ action: "aa-generate-application", payload: payload }, function (resp) {
       if (chrome.runtime.lastError) { aaRenderError(body, chrome.runtime.lastError.message); return; }
       if (!resp || !resp.ok) { aaRenderError(body, (resp && resp.error) || "Generation failed."); return; }
@@ -1128,19 +1240,13 @@
   async function runAnswerQuestions() {
     const body = aaShowPanel();
     body.appendChild(aaSectionTitle("pen", "AI question autofill"));
-    let settings, data;
-    try { settings = await aaLoadSettings(); data = await aaLoadData(); }
+    let data;
+    try { data = await aaLoadData(); }
     catch (e) { aaRenderError(body, "Could not load your profile or settings."); return; }
-    const provider = settings.provider;
-    const key = settings.keys && settings.keys[provider];
-    if (!key) { aaRenderError(body, "Add an AI key in AutoApply Options first."); return; }
     const fields = aaCollectQuestions();
     if (!fields.length) { aaRenderError(body, "No open-ended questions found on this page."); return; }
     aaRenderLoading(body);
     const payload = {
-      provider: provider,
-      apiKey: key,
-      model: settings.model,
       profile: aaGetActiveProfile(data),
       jobText: aaJobText(),
       questions: fields.map(function (f) { return f.q; })
@@ -1444,7 +1550,10 @@
   function aaDetectionAllowed(settings) {
     const d = (settings && settings.detect) || {};
     if (d.enabled === false) return false;
-    return aaHostAllowed(location.hostname, aaHostList(d.allowlist), aaHostList(d.blocklist));
+    // Fall back to the shared defaults (lib/storage.js) when the user has not
+    // saved a blocklist; previously the default list was defined but never used.
+    const block = aaHostList(d.blocklist);
+    return aaHostAllowed(location.hostname, aaHostList(d.allowlist), block.length ? block : aaHostList(AA_DEFAULT_BLOCKED_SITES));
   }
   function aaCountFillable() {
     let count = 0;
@@ -1460,7 +1569,6 @@
   // Built-in phrases that signal a job-application page. Users can add their
   // own keywords in Options -> Form detection.
   var AA_JOB_KEYWORDS = ["apply now", "apply for the job", "apply for job", "job application", "application form", "fill job form", "fill application", "submit application", "apply for this job", "apply for this position", "cover letter", "upload cover letter", "resume", "upload resume", "cv", "upload cv", "upload cv/resume", "curriculum vitae", "work authorization", "notice period", "expected salary", "current salary", "salary expectation", "years of experience", "linkedin profile", "why do you want", "equal opportunity employer", "we're hiring", "we\u2019re hiring", "position applied", "current company", "current working status", "employment status", "willing to relocate", "visa sponsorship", "earliest start date", "date available", "availability date", "employment history", "desired salary", "hiring process", "candidate profile", "personal information", "professional information", "attach resume", "attach cv"];
-  var AA_DEFAULT_BLOCKED_SITES = ["mail.google.com", "outlook.live.com", "outlook.office.com", "web.whatsapp.com", "facebook.com", "instagram.com", "x.com", "twitter.com", "youtube.com", "notion.so", "docs.google.com", "drive.google.com", "dropbox.com", "paypal.com", "stripe.com", "accounts.google.com"];
   function aaCustomKeywords(settings) {
     var raw = (settings && settings.detect && settings.detect.keywords) || "";
     return String(raw).split(/[\n,]+/).map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean);
@@ -1636,18 +1744,12 @@
       }
     }
     // 2) Fall back to the AI provider for open-ended fields.
-    let settings, data;
-    try { settings = await aaLoadSettings(); data = await aaLoadData(); }
+    let data;
+    try { data = await aaLoadData(); }
     catch (e) { aaAiNote("Could not load your profile.", "error"); return; }
-    const provider = settings.provider;
-    const key = settings.keys && settings.keys[provider];
-    if (!key) { aaAiNote("Add an AI key in Options to use AI fill.", "error"); return; }
     if (aaAiBtn) aaAiBtn.classList.add("aa-field-ai--busy");
     aaAiNote("Asking AI\u2026");
     const payload = {
-      provider: provider,
-      apiKey: key,
-      model: settings.model,
       profile: aaGetActiveProfile(data),
       jobText: (typeof aaJobText === "function" ? aaJobText() : ""),
       questions: [question]

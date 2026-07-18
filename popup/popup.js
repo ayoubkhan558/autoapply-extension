@@ -23,10 +23,11 @@ function setStatus(text, kind) {
 function ensureContentAndSend(tabId, message, onResult) {
   chrome.tabs.sendMessage(tabId, message, function (resp) {
     if (!chrome.runtime.lastError) { onResult(resp, null); return; }
-    chrome.scripting.insertCSS({ target: { tabId: tabId }, files: ["content.css"] }, function () {
+    // allFrames matches the manifest content_scripts (job forms often live in iframes).
+    chrome.scripting.insertCSS({ target: { tabId: tabId, allFrames: true }, files: ["content.css"] }, function () {
       void chrome.runtime.lastError;
       chrome.scripting.executeScript(
-        { target: { tabId: tabId }, files: ["lib/fields.js", "lib/matcher.js", "lib/storage.js", "content.js"] },
+        { target: { tabId: tabId, allFrames: true }, files: ["lib/fields.js", "lib/matcher.js", "lib/storage.js", "content.js"] },
         function () {
           if (chrome.runtime.lastError) { onResult(null, chrome.runtime.lastError.message); return; }
           chrome.tabs.sendMessage(tabId, message, function (resp2) {

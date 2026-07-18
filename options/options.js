@@ -14,8 +14,8 @@ const COMMON_FIELDS = [
   { section: "personal", field: "lastName", label: "Last name" },
   { section: "personal", field: "email", label: "Email" },
   { section: "personal", field: "phone", label: "Phone" },
-  { section: "personal", field: "city", label: "City" },
-  { section: "personal", field: "country", label: "Country" },
+  { section: "address", field: "city", label: "City" },
+  { section: "address", field: "country", label: "Country" },
   { section: "links", field: "linkedin", label: "LinkedIn" },
   { section: "professional", field: "currentTitle", label: "Current title" },
   { section: "professional", field: "experienceYears", label: "Years of experience" },
@@ -75,8 +75,9 @@ let rawTimer = null;
 
 const AA_DEFAULT_JOB_KEYWORDS = ["apply now", "apply for the job", "apply for job", "job application", "application form", "fill job form", "fill application", "submit application", "apply for this job", "apply for this position", "cover letter", "upload cover letter", "resume", "upload resume", "cv", "upload cv", "upload cv/resume", "curriculum vitae", "work authorization", "notice period", "expected salary", "current salary", "salary expectation", "years of experience", "linkedin profile", "why do you want", "equal opportunity employer", "we're hiring", "we’re hiring", "position applied", "current company", "current working status", "employment status", "willing to relocate", "visa sponsorship", "earliest start date", "date available", "availability date", "employment history", "desired salary", "hiring process", "candidate profile", "personal information", "professional information", "attach resume", "attach cv"];
 let PENDING_CV_FILE = null;
+let PENDING_PHOTO_FILE = null;
 
-const AA_DEFAULT_BLOCKED_SITES = ["mail.google.com", "outlook.live.com", "outlook.office.com", "web.whatsapp.com", "facebook.com", "instagram.com", "x.com", "twitter.com", "linkedin.com/feed", "youtube.com", "notion.so", "docs.google.com", "drive.google.com", "dropbox.com", "bank", "paypal.com", "stripe.com", "github.com/login", "accounts.google.com"];
+// AA_DEFAULT_BLOCKED_SITES comes from lib/storage.js (shared with the content script).
 
 const DEFAULT_MODELS = {
   gemini: "gemini-1.5-flash",
@@ -223,11 +224,22 @@ function renderCustomCard(cf, idx) {
 
 function renderCvProfileBlock(prof) {
   const block = document.createElement("div"); block.className = "aa-card-block aa-card-block--cv aa-profile-cv";
-  block.innerHTML = '<div class="aa-card-block__title">Profile CV / Resume</div><p class="aa-muted aa-muted--small">Stored per profile and auto-attached to CV/resume upload fields.</p><div class="aa-field-line"><label class="aa-btn aa-btn--ghost aa-btn--file">Choose CV / resume<input type="file" id="profileCvFile" accept=".pdf,.doc,.docx" hidden></label><span id="profileCvStatus" class="aa-status"></span></div><p class="aa-muted aa-muted--small">After choosing a file, click the bottom Save button to save it with this profile.</p>';
+  block.innerHTML =
+    '<div class="aa-card-block__title">Profile CV / Resume</div>' +
+    '<p class="aa-muted aa-muted--small">Stored per profile and auto-attached to CV/resume upload fields.</p>' +
+    '<div class="aa-field-line"><label class="aa-btn aa-btn--ghost aa-btn--file">Choose CV / resume<input type="file" id="profileCvFile" accept=".pdf,.doc,.docx" hidden></label><span id="profileCvStatus" class="aa-status"></span></div>' +
+    '<div class="aa-card-block__title">Profile picture</div>' +
+    '<p class="aa-muted aa-muted--small">Attached to photo / picture upload fields on application forms.</p>' +
+    '<div class="aa-field-line"><label class="aa-btn aa-btn--ghost aa-btn--file">Choose photo<input type="file" id="profilePhotoFile" accept="image/*" hidden></label><button type="button" id="profilePhotoRemove" class="aa-btn aa-btn--ghost">Remove</button><span id="profilePhotoStatus" class="aa-status"></span></div>' +
+    '<p class="aa-muted aa-muted--small">After choosing a file, click the bottom Save button to save it with this profile.</p>';
   setTimeout(function(){
     const input=document.getElementById("profileCvFile"), st=document.getElementById("profileCvStatus");
     if(input) input.onchange=function(){ PENDING_CV_FILE = input.files && input.files[0] ? input.files[0] : null; if(st && PENDING_CV_FILE){ st.textContent="Ready to save: "+PENDING_CV_FILE.name; st.className="aa-status"; } };
     if(prof && prof.id && st) aaGetResume(prof.id).then(function(cv){ if(cv&&cv.name){ st.textContent="Current: "+cv.name; st.className="aa-status aa-success"; } else { st.textContent="No CV saved yet."; st.className="aa-status"; }});
+    const pin=document.getElementById("profilePhotoFile"), pst=document.getElementById("profilePhotoStatus"), prm=document.getElementById("profilePhotoRemove");
+    if(pin) pin.onchange=function(){ PENDING_PHOTO_FILE = pin.files && pin.files[0] ? pin.files[0] : null; if(pst && PENDING_PHOTO_FILE){ pst.textContent="Ready to save: "+PENDING_PHOTO_FILE.name; pst.className="aa-status"; } };
+    if(prm) prm.onclick=function(){ PENDING_PHOTO_FILE=null; if(pin) pin.value=""; if(prof && prof.id) aaRemovePhoto(prof.id).then(function(){ if(pst){ pst.textContent="Photo removed."; pst.className="aa-status"; } }); };
+    if(prof && prof.id && pst) aaGetPhoto(prof.id).then(function(ph){ if(ph&&ph.name){ pst.textContent="Current: "+ph.name; pst.className="aa-status aa-success"; } else { pst.textContent="No photo saved."; pst.className="aa-status"; }});
   },0);
   return block;
 }
@@ -435,11 +447,15 @@ async function save() {
   const saveBtn = document.getElementById("saveBtn");
   if (saveBtn) { saveBtn.disabled = true; saveBtn.dataset.originalText = saveBtn.dataset.originalText || saveBtn.textContent; saveBtn.textContent = "Saving…"; }
   collectForm();
-  if (!aaValidateSettings()) { if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = saveBtn.dataset.originalText || "Save profile"; } setStatus("Fix validation errors", "error"); return; }
   if (PENDING_CV_FILE) {
     const dataUrl = await aaFileToDataUrl(PENDING_CV_FILE);
     await aaSetResume(DATA.activeProfileId, { name: PENDING_CV_FILE.name, type: PENDING_CV_FILE.type, dataUrl: dataUrl, ts: Date.now() });
     PENDING_CV_FILE = null;
+  }
+  if (PENDING_PHOTO_FILE) {
+    const photoUrl = await aaFileToDataUrl(PENDING_PHOTO_FILE);
+    await aaSetPhoto(DATA.activeProfileId, { name: PENDING_PHOTO_FILE.name, type: PENDING_PHOTO_FILE.type, dataUrl: photoUrl, ts: Date.now() });
+    PENDING_PHOTO_FILE = null;
   }
   await aaSaveData(DATA);
   renderRaw();
@@ -523,9 +539,20 @@ function aaStrObj(o) {
 function aaMergeIntoProfile(prof, parsed) {
   if (!parsed) return;
   prof.personal = prof.personal || {};
+  prof.address = prof.address || {};
   prof.links = prof.links || {};
   prof.professional = prof.professional || {};
-  aaMergeObj(prof.personal, parsed.personal);
+  // AI/heuristic parsers report address fields under `personal`; route them
+  // to the address group where the form now keeps them.
+  const addressNames = AA_FIELD_DEFS.filter(function (d) { return d.group === "address"; }).map(function (d) { return d.name; });
+  if (parsed.personal) {
+    const personal = Object.assign({}, parsed.personal);
+    const addr = {};
+    addressNames.forEach(function (k) { if (personal[k] !== undefined) { addr[k] = personal[k]; delete personal[k]; } });
+    aaMergeObj(prof.personal, personal);
+    aaMergeObj(prof.address, addr);
+  }
+  aaMergeObj(prof.address, parsed.address);
   aaMergeObj(prof.links, parsed.links);
   aaMergeObj(prof.professional, parsed.professional);
   if (Array.isArray(parsed.experience) && parsed.experience.length) {
@@ -687,8 +714,9 @@ async function init() {
     DATA.activeProfileId = e.target.value;
     renderForm();
     renderRaw();
-    try { cvFile.value = ""; } catch (er) { /* ignore */ }
-    refreshCvStatus();
+    // Drop any not-yet-saved file picks so they can't be saved onto the new profile.
+    PENDING_CV_FILE = null;
+    PENDING_PHOTO_FILE = null;
   });
 
   document.getElementById("addProfile").addEventListener("click", function () {
@@ -706,8 +734,8 @@ async function init() {
     renderProfiles();
     renderForm();
     renderRaw();
-    try { cvFile.value = ""; } catch (er) { /* ignore */ }
-    refreshCvStatus();
+    PENDING_CV_FILE = null;
+    PENDING_PHOTO_FILE = null;
   });
 
   document.getElementById("saveBtn").addEventListener("click", save);
@@ -729,13 +757,17 @@ async function init() {
     const reader = new FileReader();
     reader.onload = function () {
       try {
-        DATA = aaMigrate(JSON.parse(reader.result));
+        const parsed = JSON.parse(reader.result);
+        if (!parsed || !Array.isArray(parsed.profiles) || !parsed.profiles.length) {
+          throw new Error("Not an AutoApply profile export.");
+        }
+        DATA = aaMigrate(parsed);
         renderProfiles();
         renderForm();
         renderRaw();
         setStatus("Imported \u2014 remember to Save", "success");
       } catch (err) {
-        setStatus("Invalid JSON file", "error");
+        setStatus((err && err.message && /profile export/.test(err.message)) ? err.message : "Invalid JSON file", "error");
       }
     };
     reader.readAsText(file);

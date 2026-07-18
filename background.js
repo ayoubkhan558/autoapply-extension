@@ -11,13 +11,20 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo) {
 });
 chrome.tabs.onRemoved.addListener(function (tabId) { delete aaTabFrameCounts[tabId]; });
 
-async function seedIfEmpty() {
-  const res = await chrome.storage.local.get(STORAGE_KEY);
-  if (!res || !res[STORAGE_KEY]) {
-    const url = chrome.runtime.getURL("data/profile.default.json");
-    const def = await fetch(url).then(function (r) { return r.json(); });
-    await chrome.storage.local.set({ [STORAGE_KEY]: def });
-  }
+// Resolve AI provider/model/key from saved settings. Content scripts never
+// send the API key (they'd expose it on every page); trusted extension pages
+// (options) may pass an explicit apiKey (e.g. one just typed but not saved).
+async function aaAiOpts(payload) {
+  const p = payload || {};
+  if (p.apiKey) return p;
+  const res = await chrome.storage.local.get("autoapplyAI");
+  const s = (res && res["autoapplyAI"]) || {};
+  const provider = p.provider || s.provider || "gemini";
+  return Object.assign({}, p, {
+    provider: provider,
+    model: p.model || s.model || "",
+    apiKey: (s.keys && s.keys[provider]) || ""
+  });
 }
 
 // Build the context-menu label so it names the active profile, e.g.
@@ -36,6 +43,18 @@ function aaUpdateMenuTitle() {
     const title = name ? ("Autofill this form with " + name) : "AutoApply: fill this form";
     try { chrome.contextMenus.update("autoapply-fill", { title: title }, function () { void chrome.runtime.lastError; }); } catch (e) { /* ignore */ }
   });
+}
+
+// Seed the default profile on install so context-menu / keyboard fills work
+// before the popup or options page ever runs. aaLoadData (lib/storage.js)
+// writes the same default, so a double-seed is harmless.
+async function seedIfEmpty() {
+  const res = await chrome.storage.local.get(STORAGE_KEY);
+  if (!res || !res[STORAGE_KEY]) {
+    const url = chrome.runtime.getURL("data/profile.default.json");
+    const def = await fetch(url).then(function (r) { return r.json(); });
+    await chrome.storage.local.set({ [STORAGE_KEY]: def });
+  }
 }
 
 chrome.runtime.onInstalled.addListener(function () {
@@ -76,26 +95,30 @@ chrome.commands.onCommand.addListener(function (command) {
 
 chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
   if (msg && msg.action === "aa-parse-resume") {
-    aaCallProvider(msg.payload)
+    aaAiOpts(msg.payload)
+      .then(aaCallProvider)
       .then(function (json) { sendResponse({ ok: true, data: json }); })
       .catch(function (err) { sendResponse({ ok: false, error: String((err && err.message) || err) }); });
     return true;
   }
   if (msg && msg.action === "aa-analyze-job") {
-    aaAnalyzeJob(msg.payload)
+    aaAiOpts(msg.payload)
+      .then(aaAnalyzeJob)
       .then(function (json) { sendResponse({ ok: true, data: json }); })
       .catch(function (err) { sendResponse({ ok: false, error: String((err && err.message) || err) }); });
     return true;
   }
   if (msg && msg.action === "aa-answer-questions") {
-    aaAnswerQuestions(msg.payload)
+    aaAiOpts(msg.payload)
+      .then(aaAnswerQuestions)
       .then(function (json) { sendResponse({ ok: true, data: json }); })
       .catch(function (err) { sendResponse({ ok: false, error: String((err && err.message) || err) }); });
     return true;
   }
   // Draft an application email + cover letter for the current job posting.
   if (msg && msg.action === "aa-generate-application") {
-    aaGenerateApplication(msg.payload)
+    aaAiOpts(msg.payload)
+      .then(aaGenerateApplication)
       .then(function (json) { sendResponse({ ok: true, data: json }); })
       .catch(function (err) { sendResponse({ ok: false, error: String((err && err.message) || err) }); });
     return true;
@@ -113,13 +136,14 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
       const txt = max > 0 ? (max > 99 ? "99+" : String(max)) : "";
       try {
         chrome.action.setBadgeText({ tabId: tabId, text: txt });
-        if (txt) chrome.action.setBadgeBackgroundColor({ tabId: tabId, color: "#4f46e5" });
+        if (txt) chrome.action.setBadgeBackgroundColor({ tabId: tabId, color: "#0071e3" });
       } catch (e) { /* ignore */ }
     }
     return false;
   }
   if (msg && msg.action === "aa-list-models") {
-    aaListModels(msg.payload)
+    aaAiOpts(msg.payload)
+      .then(aaListModels)
       .then(function (models) { sendResponse({ ok: true, models: models }); })
       .catch(function (err) { sendResponse({ ok: false, error: String((err && err.message) || err) }); });
     return true;
