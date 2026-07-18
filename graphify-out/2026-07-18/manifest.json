@@ -5,8 +5,8 @@
     "semantic_hash": ""
   },
   "content.js": {
-    "mtime": 1784395661.7275872,
-    "ast_hash": "97dd97d8a84152bffa45ec5e317ef66d",
+    "mtime": 1784396704.250218,
+    "ast_hash": "759cd74059e3508304eb2f635f8b3a5e",
     "semantic_hash": ""
   },
   "data/profile.default.json": {
@@ -45,8 +45,8 @@
     "semantic_hash": ""
   },
   "options/options.js": {
-    "mtime": 1784395711.599667,
-    "ast_hash": "e601beaf0de83db51bd2f5620875c057",
+    "mtime": 1784396805.4033575,
+    "ast_hash": "446008ccd5f69ebc20216713e96fe133",
     "semantic_hash": ""
   },
   "popup/popup.js": {
@@ -60,8 +60,8 @@
     "semantic_hash": ""
   },
   "options/options.html": {
-    "mtime": 1783056818.0,
-    "ast_hash": "6d1bff32c8e8ed4c4c95f64332768cd8",
+    "mtime": 1784396793.9350083,
+    "ast_hash": "41edc643bdf141f73a9b18d4b6d95171",
     "semantic_hash": ""
   },
   "popup/popup.html": {
@@ -85,8 +85,8 @@
     "semantic_hash": ""
   },
   "test_fixes.js": {
-    "mtime": 1784395959.3572628,
-    "ast_hash": "1e7387270972cb14b0f92adba9f93d51",
+    "mtime": 1784396844.5279078,
+    "ast_hash": "11e7c726a299b83bb943d33cd77ec2a5",
     "semantic_hash": ""
   },
   "DESIGN.md": {

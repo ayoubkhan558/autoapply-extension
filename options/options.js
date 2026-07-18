@@ -780,6 +780,24 @@ async function init() {
     setStatus("Duplicated \u2014 remember to Save", "success");
   });
 
+  document.getElementById("deleteProfile").addEventListener("click", async function () {
+    if (DATA.profiles.length <= 1) {
+      setStatus("Keep at least one profile", "error");
+      return;
+    }
+    const prof = activeProfile();
+    if (!confirm('Delete "' + (prof.label || "this profile") + '"? This cannot be undone.')) return;
+    DATA.profiles = DATA.profiles.filter(function (p) { return p.id !== prof.id; });
+    DATA.activeProfileId = DATA.profiles[0].id;
+    await Promise.all([aaRemoveResume(prof.id), aaRemovePhoto(prof.id), aaSaveData(DATA)]);
+    PENDING_CV_FILE = null;
+    PENDING_PHOTO_FILE = null;
+    renderProfiles();
+    renderForm();
+    renderRaw();
+    setStatus("Profile deleted", "success");
+  });
+
   document.getElementById("saveBtn").addEventListener("click", save);
 
   document.getElementById("exportBtn").addEventListener("click", function () {

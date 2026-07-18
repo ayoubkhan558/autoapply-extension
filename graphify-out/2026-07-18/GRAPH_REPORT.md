@@ -1,16 +1,16 @@
 # Graph Report - autoapply-extension  (2026-07-18)
 
 ## Corpus Check
-- 15 files · ~29,564 words
+- 15 files · ~30,299 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 332 nodes · 691 edges · 16 communities (15 shown, 1 thin omitted)
+- 333 nodes · 693 edges · 16 communities (15 shown, 1 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 12 edges (avg confidence: 0.5)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `617646f1`
+- Built from commit: `76c177a1`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -37,7 +37,7 @@
 2. `norm()` - 17 edges
 3. `run()` - 17 edges
 4. `renderForm()` - 17 edges
-5. `init()` - 16 edges
+5. `init()` - 17 edges
 6. `getAttrText()` - 15 edges
 7. `aaEl()` - 15 edges
 8. `fillCustomSelects()` - 14 edges
@@ -55,7 +55,7 @@
 
 ### Community 0 - "options.js"
 Cohesion: 0.14
-Nodes (37): AA_DEFAULT_JOB_KEYWORDS, aaFileToDataUrl(), aaMergeIntoProfile(), aaMergeObj(), aaReadInputValue(), aaSendMessage(), aaStrObj(), activeProfile() (+29 more)
+Nodes (38): AA_DEFAULT_JOB_KEYWORDS, AA_TAB_ICONS, aaFileToDataUrl(), aaMergeIntoProfile(), aaMergeObj(), aaReadInputValue(), aaSendMessage(), aaStrObj() (+30 more)
 
 ### Community 1 - "manifest.json"
 Cohesion: 0.06
@@ -114,7 +114,7 @@ Cohesion: 0.40
 Nodes (4): assert, fs, store, vm
 
 ## Knowledge Gaps
-- **83 isolated node(s):** `aaTabFrameCounts`, `AA_RESUME_PROMPT`, `manifest_version`, `name`, `version` (+78 more)
+- **84 isolated node(s):** `aaTabFrameCounts`, `AA_RESUME_PROMPT`, `manifest_version`, `name`, `version` (+79 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **1 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -128,9 +128,9 @@ _Questions this graph is uniquely positioned to answer:_
 - **Are the 5 inferred relationships involving `init()` (e.g. with `onFieldInput()` and `onRawBlur()`) actually correct?**
   _`init()` has 5 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `aaTabFrameCounts`, `AA_RESUME_PROMPT`, `manifest_version` to the rest of the system?**
-  _83 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _84 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `options.js` be split into smaller, more focused modules?**
-  _Cohesion score 0.14146341463414633 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.13704994192799072 - nodes in this community are weakly interconnected._
 - **Should `manifest.json` be split into smaller, more focused modules?**
   _Cohesion score 0.05714285714285714 - nodes in this community are weakly interconnected._
 - **Should `content.js` be split into smaller, more focused modules?**
