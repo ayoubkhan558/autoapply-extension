@@ -1,7 +1,7 @@
 # Graph Report - autoapply-extension  (2026-07-20)
 
 ## Corpus Check
-- 21 files · ~32,091 words
+- 21 files · ~32,166 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `799227c6`
+- Built from commit: `dd5efa86`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 

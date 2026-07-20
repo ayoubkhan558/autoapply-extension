@@ -3032,7 +3032,7 @@
       "label": "setupSettingsTabs()",
       "file_type": "code",
       "source_file": "options/options.js",
-      "source_location": "L894",
+      "source_location": "L897",
       "_origin": "ast",
       "id": "options_options_setupsettingstabs",
       "community": 0,
@@ -9222,7 +9222,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "options/options.js",
-      "source_location": "L894",
+      "source_location": "L897",
       "weight": 1.0,
       "_origin": "ast",
       "source": "options_options",
@@ -10194,7 +10194,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "options/options.js",
-      "source_location": "L891",
+      "source_location": "L894",
       "weight": 1.0,
       "_origin": "ast",
       "source": "options_options_init",
@@ -11151,5 +11151,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "799227c69a0e9c72f00876c5b8e77e01413b055f"
+  "built_at_commit": "dd5efa86153a6abd3ecc9c5fdfd2d0f6056f8de7"
 }

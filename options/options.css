@@ -108,10 +108,38 @@
 .aa-ext-options .aa-btn--remove:hover { background: rgba(215, 0, 21, 0.05); border-color: rgba(215, 0, 21, 0.4); }
 
 /* ---- Toolbar ---- */
-.aa-ext-options .aa-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 20px; }
+.aa-ext-options .aa-toolbar {
+  display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; justify-content: space-between;
+  margin: 0 0 20px; padding: 16px 20px;
+  border: 1px solid var(--aa-line); border-radius: var(--aa-radius); background: var(--aa-surface);
+}
+.aa-ext-options .aa-toolbar__main {
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;
+  flex: 1 1 280px; min-width: 0;
+}
+.aa-ext-options .aa-toolbar__aside {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  flex: 0 1 auto;
+}
+.aa-ext-options .aa-toolbar__field {
+  display: flex; flex-direction: column; gap: 4px;
+  flex: 1 1 180px; min-width: 140px; max-width: 320px;
+}
+.aa-ext-options .aa-toolbar__field-label {
+  font-size: 12px; font-weight: 600; letter-spacing: -0.01em; color: var(--aa-muted);
+}
+.aa-ext-options .aa-toolbar__group { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.aa-ext-options .aa-toolbar__danger { margin-left: auto; }
 .aa-ext-options .aa-toolbar__select {
+  width: 100%; min-width: 0;
   padding: 8px 12px; border: 1px solid var(--aa-line); border-radius: var(--aa-radius);
   background: var(--aa-surface); color: var(--aa-ink); font-family: inherit; font-size: 14px;
+}
+.aa-ext-options .aa-toolbar__aside .aa-toolbar__group {
+  padding-right: 8px; border-right: 1px solid var(--aa-line);
+}
+.aa-ext-options #toggleRaw[aria-pressed="true"] {
+  background: rgba(0, 102, 204, 0.1); border-color: var(--aa-link);
 }
 
 /* ---- Card blocks (API / CV / detection): one flat white surface ---- */

@@ -45,8 +45,8 @@
     "semantic_hash": ""
   },
   "options/options.js": {
-    "mtime": 1784533590.0924757,
-    "ast_hash": "0fbec12a3e758694f0bc73000130bc30",
+    "mtime": 1784534565.322693,
+    "ast_hash": "9347d1b0e2c2cb81c1f0c07a3a7a7154",
     "semantic_hash": ""
   },
   "popup/popup.js": {
@@ -110,8 +110,8 @@
     "semantic_hash": ""
   },
   "content/field-ai.js": {
-    "mtime": 1784533558.8896732,
-    "ast_hash": "b57ce8cd05b30ef5db173e9be5d4114a",
+    "mtime": 1784534565.322693,
+    "ast_hash": "13137fba2e331f8169d4f4ae86178a1f",
     "semantic_hash": ""
   },
   "content/fill.js": {
@@ -120,8 +120,8 @@
     "semantic_hash": ""
   },
   "content/panel.js": {
-    "mtime": 1784533558.3491216,
-    "ast_hash": "e45b3b377e2799b34f1990129c156ba1",
+    "mtime": 1784534565.3236947,
+    "ast_hash": "abc463c2a51fb9607ac4cfe674824dbd",
     "semantic_hash": ""
   },
   "scripts/split-content.js": {

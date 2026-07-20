@@ -1,8 +1,5 @@
 // AutoApply popup script. Drives the toolbar popup: triggers autofill / field
-// selection / job analysis on the active tab, shows quick copy tools and the
-// "last filled here" reminder, and manages the job-board search shortcuts.
-//
-// Known job boards used by the "Find jobs" shortcuts (host per provider key).
+// selection / job analysis on the active tab, and manages job-board search shortcuts.
 const BOARDS = {
   lever: "jobs.lever.co",
   greenhouse: "boards.greenhouse.io",
@@ -59,36 +56,10 @@ async function init() {
     if (p.id === data.activeProfileId) opt.selected = true;
     sel.appendChild(opt);
   });
-  function aaActiveProfile() { return aaGetActiveProfile(data); }
-  function refreshCv(pid) {
-    aaGetResume(pid).then(function (cv) {
-      const b = document.getElementById("cvBadge");
-      if (!b) return;
-      if (cv && cv.name) { b.textContent = cv.name; b.title = cv.name; b.className = "aa-quick__cv-name aa-quick__cv-name--set"; }
-      else { b.textContent = "No CV attached"; b.title = ""; b.className = "aa-quick__cv-name"; }
-    }).catch(function () { /* ignore */ });
-  }
-  function refreshQuick() {
-    const p = aaActiveProfile() || {};
-    const per = p.personal || {};
-    const email = per.email || "";
-    const phone = per.phone || "";
-    const eq = document.getElementById("qEmail");
-    const pq = document.getElementById("qPhone");
-    if (eq) { eq.textContent = email || "\u2014"; eq.title = email; }
-    if (pq) { pq.textContent = phone || "\u2014"; pq.title = phone; }
-    const ce = document.getElementById("copyEmail");
-    const cp = document.getElementById("copyPhone");
-    if (ce) ce.disabled = !email;
-    if (cp) cp.disabled = !phone;
-    refreshCv(p.id);
-  }
   sel.addEventListener("change", async function () {
     data.activeProfileId = sel.value;
     await aaSaveData(data);
-    refreshQuick();
   });
-  refreshQuick();
   // Email/phone quick rows are intentionally hidden in the compact popup.
   const editBtn = document.getElementById("editProfileBtn");
   if (editBtn) editBtn.addEventListener("click", function () { chrome.runtime.openOptionsPage(); });

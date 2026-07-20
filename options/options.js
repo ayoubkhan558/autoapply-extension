@@ -886,6 +886,9 @@ async function init() {
     collectForm();
     renderRaw();
     w.classList.toggle("aa-hidden");
+    const open = !w.classList.contains("aa-hidden");
+    this.textContent = open ? "Hide raw JSON" : "Show raw JSON";
+    this.setAttribute("aria-pressed", open ? "true" : "false");
   });
 
   setupSettingsTabs();

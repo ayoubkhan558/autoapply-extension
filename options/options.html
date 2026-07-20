@@ -40,13 +40,24 @@
       <!-- PROFILE TAB -->
       <section class="aa-tab-panel aa-tab-panel--active" data-panel="profile">
         <div class="aa-toolbar">
-          <select id="profileSelect" class="aa-toolbar__select"></select>
-          <button id="addProfile" class="aa-btn aa-btn--ghost">+ New profile</button>
-          <button id="dupProfile" class="aa-btn aa-btn--ghost">Duplicate current</button>
-          <button id="deleteProfile" class="aa-btn aa-btn--remove">Delete current</button>
-          <button id="exportBtn" class="aa-btn aa-btn--ghost">Export JSON</button>
-          <label class="aa-btn aa-btn--ghost aa-btn--file">Import JSON<input type="file" id="importFile" accept="application/json" hidden /></label>
-          <button id="toggleRaw" class="aa-btn aa-btn--ghost">Toggle raw JSON</button>
+          <div class="aa-toolbar__main">
+            <label class="aa-toolbar__field" for="profileSelect">
+              <span class="aa-toolbar__field-label">Active profile</span>
+              <select id="profileSelect" class="aa-toolbar__select"></select>
+            </label>
+            <div class="aa-toolbar__group" role="group" aria-label="Profile actions">
+              <button type="button" id="addProfile" class="aa-btn aa-btn--ghost" title="Create a new empty profile">+ New</button>
+              <button type="button" id="dupProfile" class="aa-btn aa-btn--ghost" title="Duplicate the current profile">Duplicate</button>
+            </div>
+            <button type="button" id="deleteProfile" class="aa-btn aa-btn--remove aa-toolbar__danger" title="Delete the current profile">Delete</button>
+          </div>
+          <div class="aa-toolbar__aside">
+            <div class="aa-toolbar__group" role="group" aria-label="Backup">
+              <button type="button" id="exportBtn" class="aa-btn aa-btn--ghost" title="Download profiles as JSON">Export</button>
+              <label class="aa-btn aa-btn--ghost aa-btn--file" title="Import profiles from JSON">Import<input type="file" id="importFile" accept="application/json" hidden /></label>
+            </div>
+            <button type="button" id="toggleRaw" class="aa-btn aa-btn--ghost" title="Show or hide the raw JSON editor" aria-pressed="false">Show raw JSON</button>
+          </div>
         </div>
 
         <div class="aa-completeness">

@@ -1,7 +1,7 @@
 # Graph Report - autoapply-extension  (2026-07-20)
 
 ## Corpus Check
-- 21 files · ~32,062 words
+- 21 files · ~32,091 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
