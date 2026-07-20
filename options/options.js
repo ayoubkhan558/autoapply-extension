@@ -449,9 +449,10 @@ async function save() {
   if (saveBtn) { saveBtn.textContent = "Saved ✓"; setTimeout(function(){ saveBtn.disabled = false; saveBtn.textContent = saveBtn.dataset.originalText || "Save profile"; }, 1400); }
 }
 
-// Live: fields -> JSON
+// Live: fields -> JSON (+ profile dropdown when label changes)
 function onFieldInput() {
   collectForm();
+  renderProfiles(); // keep toolbar select in sync with Profile label
   renderRaw();
   renderCompleteness(activeProfile());
   setRawStatus("Updated from fields", "success");
