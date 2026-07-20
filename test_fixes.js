@@ -54,6 +54,26 @@ vm.runInThisContext(fs.readFileSync("lib/storage.js", "utf8"));
     assert(m.key === z.key && m.score >= 0.6, z.text + " -> " + m.key + " (" + m.score + ")");
   });
 
+  // Bubble: sibling label "Phone Number*" must match; format-mask placeholder alone must not.
+  const phoneHit = AutoApplyMatcher.match({ text: "Phone Number*", attr: "" });
+  assert(phoneHit.key === "personal.phone" && phoneHit.score >= 0.6, "Phone Number* -> " + phoneHit.key);
+  const maskMiss = AutoApplyMatcher.match({ text: "03XXXXXXXXX", attr: "" });
+  assert(maskMiss.key !== "personal.phone" || maskMiss.score < 0.6, "mask placeholder must not win as phone");
+
+  const noticeHit = AutoApplyMatcher.match({ text: "Notice Period (Days)*", attr: "" });
+  assert(noticeHit.key === "professional.noticePeriod" && noticeHit.score >= 0.6, "Notice Period -> " + noticeHit.key);
+  const joinHit = AutoApplyMatcher.match({ text: "How soon can you join? (Days)", attr: "" });
+  assert(joinHit.key === "professional.noticePeriod" && joinHit.score >= 0.6, "How soon -> " + joinHit.key);
+
+  // Search/filter exclusion hay (mirror content/dom.js isSearchField attr scan).
+  const SEARCH_FILTER_RE = /typeahead|searchbox|semanticsearch|filter-input|autosuggest|describe the job you want/;
+  assert(SEARCH_FILTER_RE.test("typeahead-input semanticSearchBox Describe the job you want".toLowerCase()));
+  assert(!SEARCH_FILTER_RE.test("city lahore address zip"), "application address fields stay fillable");
+
+  // Cover letter file upload (per profile, separate from professional.coverLetter text).
+  assert(typeof aaGetCoverLetter === "function" && typeof aaSetCoverLetter === "function");
+  assert(typeof aaGetResumeText === "function");
+
   // Shared default job keywords / roles stay in sync with options display.
   assert(Array.isArray(AA_DEFAULT_JOB_KEYWORDS) && AA_DEFAULT_JOB_KEYWORDS.length > 10);
   assert(AA_DEFAULT_JOB_KEYWORDS.indexOf("apply now") !== -1);

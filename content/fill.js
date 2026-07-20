@@ -28,6 +28,20 @@ async function aaLoadActivePhoto() {
   } catch (e) { return null; }
 }
 
+async function aaLoadActiveCoverLetter() {
+  try {
+    const data = await aaLoadData();
+    return await aaGetCoverLetter(data && data.activeProfileId);
+  } catch (e) { return null; }
+}
+
+async function aaLoadActiveResumeText() {
+  try {
+    const data = await aaLoadData();
+    return await aaGetResumeText(data && data.activeProfileId);
+  } catch (e) { return ""; }
+}
+
 function displayLabel(sig, el) {
   let t = ((sig && sig.text) || "").trim();
   if (!t) t = ((sig && sig.attr) || "").trim();
@@ -123,6 +137,7 @@ async function planResume() {
   for (let i = 0; i < inputs.length; i++) {
     const el = inputs[i];
     const lbl = norm(getLabelText(el) + " " + getAttrText(el));
+    if (/cover letter|coverletter|cover note|covernote/.test(lbl) && !/resume|cv|curriculum/.test(lbl)) continue;
     if (/resume|cv|curriculum/.test(lbl) || inputs.length === 1) { target = el; break; }
   }
   if (!target) return null;
@@ -139,9 +154,25 @@ async function planPhoto() {
     const el = inputs[i];
     const lbl = norm(getLabelText(el) + " " + getAttrText(el));
     if (/resume|cv|curriculum/.test(lbl)) continue;
+    if (/cover letter|coverletter|cover note|covernote/.test(lbl)) continue;
     const wantsImage = (el.accept || "").indexOf("image") !== -1;
     if (/photo|picture|avatar|headshot|profile image|profileimage/.test(lbl) || wantsImage) {
       return { kind: "resume", el: el, label: "Attach photo: " + (stored.name || "photo"), value: stored.name || "photo", score: 0.9, editable: false, stored: stored };
+    }
+  }
+  return null;
+}
+
+async function planCoverLetter() {
+  let stored = null;
+  try { stored = await aaLoadActiveCoverLetter(); } catch (e) { stored = null; }
+  if (!stored || !stored.dataUrl) return null;
+  const inputs = collectControls().filter(function (el) { return (el.type || "").toLowerCase() === "file" && !el.disabled; });
+  for (let i = 0; i < inputs.length; i++) {
+    const el = inputs[i];
+    const lbl = norm(getLabelText(el) + " " + getAttrText(el));
+    if (/cover letter|coverletter|cover note|covernote|upload cover|attach cover/.test(lbl) && !/resume|cv|curriculum/.test(lbl)) {
+      return { kind: "resume", el: el, label: "Attach cover letter: " + (stored.name || "cover-letter"), value: stored.name || "cover-letter", score: 0.9, editable: false, stored: stored };
     }
   }
   return null;
@@ -353,6 +384,8 @@ async function run() {
   if (resume) { try { if (await applyResume(resume)) filled++; } catch (e) { /* ignore */ } }
   const photo = await planPhoto();
   if (photo) { try { if (await applyResume(photo)) filled++; } catch (e) { /* ignore */ } }
+  const cover = await planCoverLetter();
+  if (cover) { try { if (await applyResume(cover)) filled++; } catch (e) { /* ignore */ } }
   try { aaShowFillResult(filled, aaUnfilledFields(controls, true)); } catch (e) { /* ignore */ }
   if (filled > 0) { try { aaRecordFill(aaTopHost(), filled); } catch (e) { /* ignore */ } }
   return { filled: filled };

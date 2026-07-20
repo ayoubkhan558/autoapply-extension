@@ -92,10 +92,18 @@ function findCountryCodeSelect(el) {
 
 function normalizePhone(el, sig, value) {
   const v = String(value).trim();
-  const digits = v.replace(/[^0-9]/g, "");
+  let digits = v.replace(/[^0-9]/g, "");
+  const ph = el.placeholder || "";
   const ccSelect = findCountryCodeSelect(el);
   const maxlen = parseInt(el.getAttribute("maxlength") || "0", 10);
-  const wantsCC = /country code|with code|include code|\+/.test((((sig && sig.text) || "") + " " + (el.placeholder || "")).toLowerCase());
+  const wantsCC = /country code|with code|include code|\+/.test((((sig && sig.text) || "") + " " + ph).toLowerCase());
+  // Local masks like Bubble "03XXXXXXXXX" — keep leading 0, drop +92 country code.
+  if (/^0[\dXx]/.test(ph)) {
+    if (digits.length >= 12 && digits.slice(0, 2) === "92") digits = "0" + digits.slice(2);
+    else if (digits.length === 10 && digits.charAt(0) === "3") digits = "0" + digits;
+    else if (digits.length > 11) digits = digits.slice(-11);
+    return digits;
+  }
   if (ccSelect || (maxlen > 0 && maxlen <= 11)) {
     let nat = digits;
     if (nat.length > 10) nat = nat.slice(nat.length - 10);
@@ -255,7 +263,9 @@ function getLabelText(el) {
       if (n) parts.push(n.textContent);
     });
   }
-  if (el.placeholder) parts.push(el.placeholder);
+  // Skip format-mask placeholders (e.g. Bubble "03XXXXXXXXX") — they are not field identity.
+  // Real label text comes from nearestLabel / aria / for= instead.
+  if (el.placeholder && !/^[\dXx\s\-()+.]+$/.test(el.placeholder)) parts.push(el.placeholder);
   if (el.title) parts.push(el.title);
   // Custom label attributes on the field or its widget wrappers,
   // e.g. cx-prop-label="Last Name", data-label, aria-roledescription.
@@ -269,18 +279,13 @@ function getLabelText(el) {
     node = node.parentElement;
     if (node && /^(FORM|BODY|MAIN)$/.test(node.tagName || "")) break;
   }
-  // Custom-widget wrappers (Zoho CRUX, etc.) carry the real label on an
-  // ancestor many levels above the raw <input>, out of reach of the fixed-
-  // depth walk above. closest() reaches it at any depth.
   try {
     const propEl = el.closest && el.closest("[cx-prop-label]");
     if (propEl) { const pl = propEl.getAttribute("cx-prop-label"); if (pl) parts.push(pl); }
   } catch (e) { /* ignore */ }
-  // Fallback: nearest descriptive text in the surrounding row/group.
-  if (parts.join("").replace(/[^a-z0-9]/gi, "").length < 2) {
-    const near = nearestLabel(el);
-    if (near) parts.push(near);
-  }
+  // Always prefer a nearby visible label (sibling "Phone Number*" in Bubble, Zoho rows, etc.).
+  const near = nearestLabel(el);
+  if (near) parts.unshift(near);
   return parts.join(" ");
 }
 
@@ -298,7 +303,7 @@ function getAttrText(el) {
       const av = a.value;
       if (!av) continue;
       if (an === "name" || an === "id" || an === "autocomplete" || an === "placeholder" || an === "title" || an === "for") vals.push(av);
-      else if (/(label|field|qa|prop-name|propname|automationid|automation-id|testid|test-id)/.test(an)) vals.push(av);
+      else if (/(label|field|qa|prop-name|propname|automationid|automation-id|testid|test-id|componentkey)/.test(an)) vals.push(av);
       else if (an.indexOf("data-") === 0 && av.length <= 60) vals.push(av);
     }
     node = node.parentElement;
@@ -343,7 +348,12 @@ function setRichTextValue(el, value) {
 }
 
 function fireEvents(el) {
-  el.dispatchEvent(new Event("input", { bubbles: true }));
+  // Bubble.io (and similar) listen for InputEvent, not plain Event("input").
+  try {
+    el.dispatchEvent(new InputEvent("input", { bubbles: true, cancelable: true, inputType: "insertText", data: el.value }));
+  } catch (e) {
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  }
   el.dispatchEvent(new Event("change", { bubbles: true }));
   el.dispatchEvent(new Event("blur", { bubbles: true }));
 }
@@ -357,7 +367,7 @@ function fillTextLike(el, value) {
     v = num;
   }
   if (el.isContentEditable) setRichTextValue(el, v);
-  else { setNativeValue(el, v); fireEvents(el); }
+  else { try { el.focus(); } catch (e) { /* ignore */ } setNativeValue(el, v); fireEvents(el); }
   return true;
 }
 
@@ -368,17 +378,36 @@ function commitSelect(el, idx) {
   const desc = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, "value");
   if (desc && desc.set) desc.set.call(el, el.options[idx].value);
   el.selectedIndex = idx;
-  el.dispatchEvent(new Event("input", { bubbles: true }));
+  try { el.focus(); } catch (e) { /* ignore */ }
+  try {
+    el.dispatchEvent(new InputEvent("input", { bubbles: true, cancelable: true, inputType: "insertReplacementText" }));
+  } catch (e) {
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  }
   el.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
 function fillSelect(el, value) {
   let rawValue = String(value || "");
   const sigText = norm(getLabelText(el) + " " + getAttrText(el));
-  if (/notice/.test(sigText)) rawValue = rawValue.replace(/\s*days?$/i, " days");
+  // Day dropdowns use bare numbers (0/7/14/30) — strip "days", don't append them.
+  const isNotice = /notice|how soon can you join/.test(sigText);
+  if (isNotice) rawValue = rawValue.replace(/\s*days?$/i, "").trim();
   const target = norm(rawValue);
   if (!target) return false;
   const opts = el.options;
+  // Notice: exact digit match first (profile "30 days" → option "30").
+  if (isNotice) {
+    const n = (String(value).match(/\d+/) || [""])[0];
+    if (n) {
+      for (let i = 0; i < opts.length; i++) {
+        if (norm(opts[i].textContent) === n || norm(opts[i].value) === n) {
+          commitSelect(el, i);
+          return true;
+        }
+      }
+    }
+  }
   for (let i = 0; i < opts.length; i++) {
     if (norm(opts[i].textContent) === target || norm(opts[i].value) === target) {
       commitSelect(el, i);
@@ -405,16 +434,9 @@ function fillSelect(el, value) {
       if (tokens.some(function (tk) { return tk.length >= 3 && (tx === tk || tx.indexOf(tk) !== -1); })) bestIdx = i;
     }
   }
-  // Notice-period fallback: map "30" to "30 days" / value "30 00:00:00".
-  if (bestIdx === -1 && /notice/.test(sigText)) {
-    const n = (String(value).match(/\d+/) || [""])[0];
-    if (n) {
-      for (let i = 0; i < opts.length; i++) {
-        const tx = norm(opts[i].textContent + " " + opts[i].value);
-        if (tx.indexOf(n) !== -1) { bestIdx = i; break; }
-      }
-    }
-    if (bestIdx === -1 && /immediate|0/.test(target)) {
+  // Notice-period fallback: map "immediate" → 0.
+  if (bestIdx === -1 && isNotice) {
+    if (/immediate|^0$/.test(target)) {
       for (let i = 0; i < opts.length; i++) if (/immediate|^0$/.test(norm(opts[i].textContent + " " + opts[i].value))) { bestIdx = i; break; }
     }
   }
@@ -433,14 +455,42 @@ function fillSelect(el, value) {
 }
 
 function isSearchField(el, sig) {
+  if (!el) return false;
   const t = (el.type || "").toLowerCase();
   if (t === "search") return true;
   const role = (el.getAttribute("role") || "").toLowerCase();
   if (role === "searchbox" || role === "search") return true;
-  if (el.closest('[role="search"], form[role="search"], form.search, .search-form, [class*="searchbox"], [class*="search-bar"], [class*="search-box"]')) return true;
-  const hay = ((sig && sig.text) || "") + " " + ((sig && sig.attr) || "");
-  const low = hay.toLowerCase();
+
+  // Widget attrs on the field and a few wrappers (typeahead, site search, filters).
+  const bits = [];
+  let node = el;
+  for (let d = 0; d < 4 && node; d++) {
+    if (node.getAttribute) {
+      ["id", "name", "class", "data-testid", "componentkey", "aria-label", "placeholder", "role"].forEach(function (a) {
+        const v = node.getAttribute(a); if (v) bits.push(v);
+      });
+    }
+    node = node.parentElement;
+  }
+  const attrLow = bits.join(" ").toLowerCase();
+  if (/typeahead|searchbox|search-box|search-input|search-field|semanticsearch|site-search|global-search|job-search|filter-input|filter-box|autosuggest|auto-suggest|faceted-search/.test(attrLow)) return true;
+
+  try {
+    if (el.closest('[role="search"], form[role="search"], form.search, .search-form, [class*="searchbox"], [class*="search-bar"], [class*="search-box"], [class*="typeahead"], [data-testid*="search"], [data-testid*="typeahead"], [data-testid*="filter"], [componentkey*="search"], [componentkey*="Search"], [componentkey*="Filter"]')) return true;
+  } catch (e) { /* ignore */ }
+
+  let text = "", attr = "";
+  if (typeof sig === "string") text = sig;
+  else if (sig) { text = sig.text || ""; attr = sig.attr || ""; }
+  const low = (text + " " + attr + " " + attrLow).toLowerCase();
   if (/search/.test(low) && !/research/.test(low)) return true;
+  if (/\b(filter by|filters?\b|refine results|sort by|clear selection)\b/.test(low)) return true;
+  if (/describe the job you want|search for jobs|find jobs|what job|job keywords|keywords?\s*search/.test(low)) return true;
+
+  // List autocomplete on search widgets only — not address/location pickers.
+  if ((el.getAttribute("aria-autocomplete") || "").toLowerCase() === "list") {
+    if (/typeahead|search|semanticsearch|autosuggest|filter/.test(attrLow)) return true;
+  }
   return false;
 }
 

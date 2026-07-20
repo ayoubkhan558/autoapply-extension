@@ -58,6 +58,7 @@ let rawTimer = null;
 
 let PENDING_CV_FILE = null;
 let PENDING_PHOTO_FILE = null;
+let PENDING_COVER_LETTER_FILE = null;
 
   // AA_DEFAULT_BLOCKED_SITES / AA_DEFAULT_JOB_KEYWORDS / AA_DEFAULT_JOB_ROLES
   // come from lib/storage.js (shared with the content script).
@@ -209,20 +210,82 @@ function renderCustomCard(cf, idx) {
 }
 
 function renderCvProfileBlock(prof) {
-  const block = document.createElement("div"); block.className = "aa-card-block aa-card-block--cv aa-profile-cv";
-  block.innerHTML =
-    '<div class="aa-card-block__title">Profile CV / Resume</div>' +
-    '<p class="aa-muted aa-muted--small">Stored per profile and auto-attached to CV/resume upload fields.</p>' +
-    '<div class="aa-field-line"><label class="aa-btn aa-btn--ghost aa-btn--file">Choose CV / resume<input type="file" id="profileCvFile" accept=".pdf,.doc,.docx" hidden></label><span id="profileCvStatus" class="aa-status"></span></div>' +
-    '<div class="aa-card-block__title">Profile picture</div>' +
-    '<p class="aa-muted aa-muted--small">Attached to photo / picture upload fields on application forms.</p>' +
-    '<img id="profilePhotoPreview" class="aa-photo-preview" alt="Profile picture preview" style="display:none">' +
-    '<div class="aa-field-line"><label class="aa-btn aa-btn--ghost aa-btn--file">Choose photo<input type="file" id="profilePhotoFile" accept="image/*" hidden></label><button type="button" id="profilePhotoRemove" class="aa-btn aa-btn--ghost">Remove</button><span id="profilePhotoStatus" class="aa-status"></span></div>' +
-    '<p class="aa-muted aa-muted--small">After choosing a file, click the bottom Save button to save it with this profile.</p>';
+  const block = document.createElement("div");
+  block.className = "aa-card-block aa-card-block--cv aa-profile-cv";
+  block.innerHTML = `
+    <div class="aa-card-block__title">Profile CV / Resume</div>
+
+    <p class="aa-muted aa-muted--small">
+      Stored per profile and auto-attached to CV/resume upload fields.
+    </p>
+
+    <div class="aa-field-line">
+      <label class="aa-btn aa-btn--ghost aa-btn--file">
+        Choose CV / resume
+        <input
+          type="file"
+          id="profileCvFile"
+          accept=".pdf,.doc,.docx"
+          hidden
+        >
+      </label>
+      <span id="profileCvStatus" class="aa-status"></span>
+    </div>
+
+    <div class="aa-card-block__title">Cover letter file</div>
+
+    <p class="aa-muted aa-muted--small">
+      PDF/DOC attached to cover-letter upload fields on application forms.
+    </p>
+
+    <div class="aa-field-line">
+      <label class="aa-btn aa-btn--ghost aa-btn--file">
+        Choose cover letter
+        <input
+          type="file"
+          id="profileCoverFile"
+          accept=".pdf,.doc,.docx"
+          hidden
+        >
+      </label>
+      <button type="button" id="profileCoverRemove" class="aa-btn aa-btn--ghost">Remove</button>
+      <span id="profileCoverStatus" class="aa-status"></span>
+    </div>
+
+    <div class="aa-card-block__title">Profile picture</div>
+
+    <p class="aa-muted aa-muted--small">
+      Attached to photo / picture upload fields on application forms.
+    </p>
+
+    <img
+      id="profilePhotoPreview"
+      class="aa-photo-preview"
+      alt="Profile picture preview"
+      style="display:none"
+    >
+
+    <div class="aa-field-line">
+      <label class="aa-btn aa-btn--ghost aa-btn--file">
+        Choose photo
+        <input type="file" id="profilePhotoFile" accept="image/*" hidden>
+      </label>
+      <button type="button" id="profilePhotoRemove" class="aa-btn aa-btn--ghost">Remove</button>
+      <span id="profilePhotoStatus" class="aa-status"></span>
+    </div>
+
+    <p class="aa-muted aa-muted--small">
+      After choosing a file, click the bottom Save button to save it with this profile.
+    </p>
+  `;
   setTimeout(function(){
     const input=document.getElementById("profileCvFile"), st=document.getElementById("profileCvStatus");
     if(input) input.onchange=function(){ PENDING_CV_FILE = input.files && input.files[0] ? input.files[0] : null; if(st && PENDING_CV_FILE){ st.textContent="Ready to save: "+PENDING_CV_FILE.name; st.className="aa-status"; } };
     if(prof && prof.id && st) aaGetResume(prof.id).then(function(cv){ if(cv&&cv.name){ st.textContent="Current: "+cv.name; st.className="aa-status aa-success"; } else { st.textContent="No CV saved yet."; st.className="aa-status"; }});
+    const cin=document.getElementById("profileCoverFile"), cst=document.getElementById("profileCoverStatus"), crm=document.getElementById("profileCoverRemove");
+    if(cin) cin.onchange=function(){ PENDING_COVER_LETTER_FILE = cin.files && cin.files[0] ? cin.files[0] : null; if(cst && PENDING_COVER_LETTER_FILE){ cst.textContent="Ready to save: "+PENDING_COVER_LETTER_FILE.name; cst.className="aa-status"; } };
+    if(crm) crm.onclick=function(){ PENDING_COVER_LETTER_FILE=null; if(cin) cin.value=""; if(prof && prof.id) aaRemoveCoverLetter(prof.id).then(function(){ if(cst){ cst.textContent="Cover letter removed."; cst.className="aa-status"; } }); };
+    if(prof && prof.id && cst) aaGetCoverLetter(prof.id).then(function(cl){ if(cl&&cl.name){ cst.textContent="Current: "+cl.name; cst.className="aa-status aa-success"; } else { cst.textContent="No cover letter saved."; cst.className="aa-status"; }});
     const pin=document.getElementById("profilePhotoFile"), pst=document.getElementById("profilePhotoStatus"), prm=document.getElementById("profilePhotoRemove"), prev=document.getElementById("profilePhotoPreview");
     function showPreview(src){ if(!prev) return; if(src){ prev.src=src; prev.style.display=""; } else { prev.removeAttribute("src"); prev.style.display="none"; } }
     if(pin) pin.onchange=function(){ PENDING_PHOTO_FILE = pin.files && pin.files[0] ? pin.files[0] : null; if(PENDING_PHOTO_FILE){ showPreview(URL.createObjectURL(PENDING_PHOTO_FILE)); if(pst){ pst.textContent="Ready to save: "+PENDING_PHOTO_FILE.name; pst.className="aa-status"; } } };
@@ -435,8 +498,15 @@ async function save() {
   collectForm();
   if (PENDING_CV_FILE) {
     const dataUrl = await aaFileToDataUrl(PENDING_CV_FILE);
-    await aaSetResume(DATA.activeProfileId, { name: PENDING_CV_FILE.name, type: PENDING_CV_FILE.type, dataUrl: dataUrl, ts: Date.now() });
+    let cvText = "";
+    try { cvText = await aaExtractText(PENDING_CV_FILE); } catch (e) { /* ignore */ }
+    await aaSetResume(DATA.activeProfileId, { name: PENDING_CV_FILE.name, type: PENDING_CV_FILE.type, dataUrl: dataUrl, text: cvText, ts: Date.now() });
     PENDING_CV_FILE = null;
+  }
+  if (PENDING_COVER_LETTER_FILE) {
+    const clUrl = await aaFileToDataUrl(PENDING_COVER_LETTER_FILE);
+    await aaSetCoverLetter(DATA.activeProfileId, { name: PENDING_COVER_LETTER_FILE.name, type: PENDING_COVER_LETTER_FILE.type, dataUrl: clUrl, ts: Date.now() });
+    PENDING_COVER_LETTER_FILE = null;
   }
   if (PENDING_PHOTO_FILE) {
     const photoUrl = await aaFileToDataUrl(PENDING_PHOTO_FILE);
@@ -559,10 +629,20 @@ function aaFileToDataUrl(file) {
   });
 }
 
+async function aaStoredToFile(stored) {
+  const blob = await (await fetch(stored.dataUrl)).blob();
+  return new File([blob], stored.name || "resume.pdf", { type: stored.type || blob.type || "application/pdf" });
+}
+
+function aaDataUrlToBase64(dataUrl) {
+  const i = (dataUrl || "").indexOf(",");
+  return i >= 0 ? dataUrl.slice(i + 1) : "";
+}
+
 async function parseResume() {
-  const fileInput = document.getElementById("resumeFile");
-  const file = fileInput.files[0];
-  if (!file) { setAiStatus("Choose a PDF or DOCX file first.", "error"); return; }
+  const prof = activeProfile();
+  const stored = prof && prof.id ? await aaGetResume(prof.id) : null;
+  if (!stored || !stored.dataUrl) { setAiStatus("Upload a CV in the Profile tab first, then Save.", "error"); return; }
   const provider = document.getElementById("aiProvider").value;
   const key = document.getElementById("aiKey").value.trim();
   const model = document.getElementById("aiModel").value.trim();
@@ -577,34 +657,41 @@ async function parseResume() {
   await aaSaveSettings(settings);
 
   try {
-    setAiStatus("Reading file\u2026", "");
+    setAiStatus("Reading profile CV\u2026", "");
+    const file = await aaStoredToFile(stored);
     const isPdf = (file.name || "").toLowerCase().endsWith(".pdf") || file.type === "application/pdf";
-    let text = "";
+    let text = stored.text || "";
     let base = {};
-    try {
-      text = await aaExtractText(file);
-      base = aaHeuristicProfile(text);
-    } catch (e) {
-      text = "";
+    if (!text || text.length < 20) {
+      try {
+        text = await aaExtractText(file);
+        base = aaHeuristicProfile(text);
+      } catch (e) {
+        text = text || "";
+      }
+    } else {
+      try { base = aaHeuristicProfile(text); } catch (e) { base = {}; }
     }
     const payload = { provider: provider, apiKey: key, model: model };
     if (provider === "gemini" && isPdf) {
-      payload.fileBase64 = await aaFileToBase64(file);
-      payload.mimeType = "application/pdf";
+      payload.fileBase64 = aaDataUrlToBase64(stored.dataUrl);
+      payload.mimeType = stored.type || "application/pdf";
       payload.text = text;
     } else {
-      if (!text || text.length < 20) throw new Error("Could not read text from this file. Try a PDF or DOCX, or use Gemini for scanned PDFs.");
+      if (!text || text.length < 20) throw new Error("Could not read text from the profile CV. Re-save the file or use Gemini for scanned PDFs.");
       payload.text = text;
     }
     setAiStatus("Asking " + provider + " to extract fields\u2026", "");
     const resp = await aaSendMessage({ action: "aa-parse-resume", payload: payload });
     if (!resp || !resp.ok) throw new Error((resp && resp.error) || "No response from AI.");
-    const prof = activeProfile();
     aaMergeIntoProfile(prof, base);
     aaMergeIntoProfile(prof, resp.data);
+    if (text && text.length >= 20) {
+      await aaSetResume(prof.id, Object.assign({}, stored, { text: text, ts: Date.now() }));
+    }
     renderForm();
     renderRaw();
-    setAiStatus("Imported \u2014 review the fields, then click Save.", "success");
+    setAiStatus("Imported from profile CV \u2014 review the fields, then click Save.", "success");
   } catch (err) {
     setAiStatus(String((err && err.message) || err), "error");
   }
@@ -683,14 +770,9 @@ async function init() {
     st.className = "aa-status aa-success";
   });
 
-  document.getElementById("resumeFile").addEventListener("change", function () {
-    const f = this.files[0];
-    if (f) setAiStatus("Selected: " + f.name, "");
-  });
-
   document.getElementById("parseResume").addEventListener("click", parseResume);
 
-  // CV/resume upload lives in the Profile tab and is saved with the bottom Save button.
+  // CV / cover letter / photo uploads live in the Profile tab and save with the bottom Save button.
 
 
   document.getElementById("profileSelect").addEventListener("change", function (e) {
@@ -701,6 +783,7 @@ async function init() {
     // Drop any not-yet-saved file picks so they can't be saved onto the new profile.
     PENDING_CV_FILE = null;
     PENDING_PHOTO_FILE = null;
+    PENDING_COVER_LETTER_FILE = null;
   });
 
   document.getElementById("addProfile").addEventListener("click", function () {
@@ -720,6 +803,7 @@ async function init() {
     renderRaw();
     PENDING_CV_FILE = null;
     PENDING_PHOTO_FILE = null;
+    PENDING_COVER_LETTER_FILE = null;
   });
 
   document.getElementById("dupProfile").addEventListener("click", async function () {
@@ -733,11 +817,13 @@ async function init() {
     // Per-profile CV/photo live in separate storage keyed by id; copy them too.
     try { const cv = await aaGetResume(src.id); if (cv) await aaSetResume(copy.id, cv); } catch (e) { /* ignore */ }
     try { const ph = await aaGetPhoto(src.id); if (ph) await aaSetPhoto(copy.id, ph); } catch (e) { /* ignore */ }
+    try { const cl = await aaGetCoverLetter(src.id); if (cl) await aaSetCoverLetter(copy.id, cl); } catch (e) { /* ignore */ }
     renderProfiles();
     renderForm();
     renderRaw();
     PENDING_CV_FILE = null;
     PENDING_PHOTO_FILE = null;
+    PENDING_COVER_LETTER_FILE = null;
     setStatus("Duplicated \u2014 remember to Save", "success");
   });
 
@@ -750,9 +836,10 @@ async function init() {
     if (!confirm('Delete "' + (prof.label || "this profile") + '"? This cannot be undone.')) return;
     DATA.profiles = DATA.profiles.filter(function (p) { return p.id !== prof.id; });
     DATA.activeProfileId = DATA.profiles[0].id;
-    await Promise.all([aaRemoveResume(prof.id), aaRemovePhoto(prof.id), aaSaveData(DATA)]);
+    await Promise.all([aaRemoveResume(prof.id), aaRemovePhoto(prof.id), aaRemoveCoverLetter(prof.id), aaSaveData(DATA)]);
     PENDING_CV_FILE = null;
     PENDING_PHOTO_FILE = null;
+    PENDING_COVER_LETTER_FILE = null;
     renderProfiles();
     renderForm();
     renderRaw();

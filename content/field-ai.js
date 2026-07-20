@@ -1,16 +1,18 @@
 // AutoApply content module. Loaded into the extension isolated world.
 // Per-field AI fill button.
 // ---- Per-field AI fill button ---------------------------------------
-// A small floating button appears next to the focused field so the user can
-// fill just that one field (from their profile, or via AI for open questions).
-function aaIsAiTextField(el) {
-  if (!el) return false;
+// One floating button tracks the hovered/focused field (not one DOM node per input).
+function aaIsAiField(el) {
+  if (!el || aaIsHidden(el)) return false;
   const tag = el.tagName;
-  if (tag === "TEXTAREA") return isFillable(el) && !aaIsHidden(el);
+  if (tag === "SELECT") return !el.disabled && !el.readOnly;
+  if (tag === "TEXTAREA") return isFillable(el);
+  if (el.isContentEditable) return true;
   if (tag !== "INPUT") return false;
   const t = (el.type || "text").toLowerCase();
-  if (["text", "email", "tel", "url", "number"].indexOf(t) === -1) return false;
-  if (!isFillable(el) || aaIsHidden(el)) return false;
+  // Include invalid Bubble type="input" and other text-like types.
+  if (["hidden", "submit", "button", "file", "password", "reset", "image", "checkbox", "radio", "range", "color"].indexOf(t) !== -1) return false;
+  if (!isFillable(el)) return false;
   const sig = { text: getLabelText(el), attr: getAttrText(el) };
   if (isSearchField(el, sig)) return false;
   return true;
@@ -45,10 +47,18 @@ function aaHideAiBtn() {
   aaAiField = null;
 }
 
+function aaScheduleHideAiBtn() {
+  clearTimeout(aaAiHideTimer);
+  aaAiHideTimer = setTimeout(function () {
+    if (aaAiField && document.activeElement === aaAiField) return;
+    aaHideAiBtn();
+  }, 200);
+}
+
 function aaSetJobFormDetected(detected) {
   aaJobFormDetected = !!detected;
   if (!aaJobFormDetected) aaHideAiBtn();
-  else if (aaAiField && aaIsAiTextField(aaAiField) && document.activeElement === aaAiField) aaShowAiBtn(aaAiField);
+  else if (aaAiField && aaIsAiField(aaAiField) && document.activeElement === aaAiField) aaShowAiBtn(aaAiField);
 }
 
 function aaAiNote(text, kind) {
@@ -84,10 +94,12 @@ async function aaFillSingleField(field) {
   catch (e) { aaAiNote("Could not load your profile.", "error"); return; }
   if (aaAiBtn) aaAiBtn.classList.add("aa-field-ai--busy");
   aaAiNote("Asking AI\u2026");
+  const resumeText = await aaGetResumeText((ctx && ctx.profile && ctx.profile.id) || (data && data.activeProfileId));
   const payload = {
     profile: aaGetActiveProfile(data),
     jobText: (typeof aaJobText === "function" ? aaJobText() : ""),
-    questions: [question]
+    questions: [question],
+    resumeText: resumeText
   };
   chrome.runtime.sendMessage({ action: "aa-answer-questions", payload: payload }, function (resp) {
     if (aaAiBtn) aaAiBtn.classList.remove("aa-field-ai--busy");
@@ -95,8 +107,10 @@ async function aaFillSingleField(field) {
     if (!resp || !resp.ok) { aaAiNote((resp && resp.error) || "AI could not answer.", "error"); return; }
     const ans = resp.data && resp.data.answers && resp.data.answers[0];
     if (!ans) { aaAiNote("AI returned no answer.", "error"); return; }
-    setNativeValue(field, String(ans));
-    fireEvents(field);
+    if (!applyTextValue(field, String(ans), 0.9)) {
+      setNativeValue(field, String(ans));
+      fireEvents(field);
+    }
     field.classList.add(HL_CLASS);
     setTimeout(function () { field.classList.remove(HL_CLASS); }, 2500);
     aaAiNote("Filled with AI \u2014 review before submitting");
@@ -110,7 +124,22 @@ function aaSetupFieldAi() {
   aaAiBtn.type = "button";
   aaAiBtn.title = "Fill this field with AI";
   aaAiBtn.setAttribute("aria-label", "Fill this field with AI");
-  aaAiBtn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9l-4.7 1.8L12 15.5l-1.8-4.7L5.5 9l4.7-1.3z"></path><path d="M19 14l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z"></path></svg>';
+  aaAiBtn.innerHTML = `
+    <svg
+      viewBox="0 0 24 24"
+      width="13"
+      height="13"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 3l1.8 4.7L18.5 9l-4.7 1.8L12 15.5l-1.8-4.7L5.5 9l4.7-1.3z"></path>
+      <path d="M19 14l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z"></path>
+    </svg>
+  `;
   aaAiBtn.style.display = "none";
   // Use mousedown so we act before the field loses focus.
   aaAiBtn.addEventListener("mousedown", function (e) {
@@ -119,18 +148,33 @@ function aaSetupFieldAi() {
     const f = aaAiField;
     if (f) aaFillSingleField(f);
   });
+  aaAiBtn.addEventListener("mouseenter", function () { clearTimeout(aaAiHideTimer); });
+  aaAiBtn.addEventListener("mouseleave", aaScheduleHideAiBtn);
   document.documentElement.appendChild(aaAiBtn);
 
   document.addEventListener("focusin", function (e) {
     const t = e.target;
-    if (aaJobFormDetected && aaIsAiTextField(t)) aaShowAiBtn(t);
+    if (aaJobFormDetected && aaIsAiField(t)) aaShowAiBtn(t);
     else if (t !== aaAiBtn) aaHideAiBtn();
   }, true);
   document.addEventListener("focusout", function (e) {
-    if (e.target === aaAiField) {
-      clearTimeout(aaAiHideTimer);
-      aaAiHideTimer = setTimeout(aaHideAiBtn, 200);
-    }
+    if (e.target === aaAiField) aaScheduleHideAiBtn();
+  }, true);
+  // ponytail: one floating btn repositioned on hover — not N icons in the DOM.
+  document.addEventListener("mouseover", function (e) {
+    if (!aaJobFormDetected) return;
+    const t = e.target;
+    if (!t || t === aaAiBtn || (aaAiBtn && aaAiBtn.contains(t))) return;
+    const field = (t.closest && t.closest("input, textarea, select, [contenteditable='true']")) || null;
+    if (aaIsAiField(field)) aaShowAiBtn(field);
+  }, true);
+  document.addEventListener("mouseout", function (e) {
+    if (!aaAiField) return;
+    const to = e.relatedTarget;
+    if (to === aaAiBtn || (aaAiBtn && aaAiBtn.contains(to))) return;
+    if (to === aaAiField || (aaAiField.contains && aaAiField.contains(to))) return;
+    const leaving = e.target === aaAiField || (aaAiField.contains && aaAiField.contains(e.target));
+    if (leaving) aaScheduleHideAiBtn();
   }, true);
   window.addEventListener("scroll", function () { if (aaAiField) aaPositionAiBtn(); }, true);
   window.addEventListener("resize", function () { if (aaAiField) aaPositionAiBtn(); }, true);

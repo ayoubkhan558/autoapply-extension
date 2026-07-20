@@ -70,7 +70,11 @@ function aaIcon(name) {
 function aaDot(color) {
   const span = document.createElement("span");
   span.className = "aa-ico-wrap";
-  span.innerHTML = '<svg class="aa-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6.5" fill="' + color + '"></circle></svg>';
+  span.innerHTML = `
+    <svg class="aa-ico" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="6.5" fill="${color}"></circle>
+    </svg>
+  `;
   return span;
 }
 // Section heading with a leading inline-SVG icon.
@@ -205,8 +209,7 @@ async function runAnalysis() {
   catch (e) { aaRenderError(body, "Could not load your profile or settings."); return; }
   const profile = aaGetActiveProfile(data);
   aaRenderLoading(body);
-  // The API key never leaves the background worker; it resolves provider/key itself.
-  const payload = { jobText: aaJobText(), profile: profile };
+  const payload = { jobText: aaJobText(), profile: profile, resumeText: await aaGetResumeText(data.activeProfileId) };
   chrome.runtime.sendMessage({ action: "aa-analyze-job", payload: payload }, function (resp) {
     if (chrome.runtime.lastError) { aaRenderError(body, chrome.runtime.lastError.message); return; }
     if (!resp || !resp.ok) { aaRenderError(body, (resp && resp.error) || "Analysis failed."); return; }
@@ -264,7 +267,7 @@ async function runGenerateApplication() {
   catch (e) { aaRenderError(body, "Could not load your profile or settings."); return; }
   const profile = aaGetActiveProfile(data);
   aaRenderLoading(body, ["Reading the job posting\u2026", "Matching your experience\u2026", "Drafting your email\u2026", "Writing your cover letter\u2026", "Polishing the wording\u2026"]);
-  const payload = { jobText: aaJobText(), profile: profile };
+  const payload = { jobText: aaJobText(), profile: profile, resumeText: await aaGetResumeText(data.activeProfileId) };
   chrome.runtime.sendMessage({ action: "aa-generate-application", payload: payload }, function (resp) {
     if (chrome.runtime.lastError) { aaRenderError(body, chrome.runtime.lastError.message); return; }
     if (!resp || !resp.ok) { aaRenderError(body, (resp && resp.error) || "Generation failed."); return; }
@@ -310,7 +313,8 @@ async function runAnswerQuestions() {
   const payload = {
     profile: aaGetActiveProfile(data),
     jobText: aaJobText(),
-    questions: fields.map(function (f) { return f.q; })
+    questions: fields.map(function (f) { return f.q; }),
+    resumeText: await aaGetResumeText(data.activeProfileId)
   };
   chrome.runtime.sendMessage({ action: "aa-answer-questions", payload: payload }, function (resp) {
     aaStopLoading();
