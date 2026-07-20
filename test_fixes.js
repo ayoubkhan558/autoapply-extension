@@ -54,5 +54,15 @@ vm.runInThisContext(fs.readFileSync("lib/storage.js", "utf8"));
     assert(m.key === z.key && m.score >= 0.6, z.text + " -> " + m.key + " (" + m.score + ")");
   });
 
+  // Shared default job keywords / roles stay in sync with options display.
+  assert(Array.isArray(AA_DEFAULT_JOB_KEYWORDS) && AA_DEFAULT_JOB_KEYWORDS.length > 10);
+  assert(AA_DEFAULT_JOB_KEYWORDS.indexOf("apply now") !== -1);
+  assert(AA_DEFAULT_JOB_KEYWORDS.indexOf("careers") !== -1, "careers keyword present");
+  assert(AA_DEFAULT_JOB_KEYWORDS.indexOf("join our team") !== -1, "join our team keyword present");
+  assert(Array.isArray(AA_DEFAULT_JOB_ROLES) && AA_DEFAULT_JOB_ROLES.length >= 20);
+  assert(AA_DEFAULT_JOB_ROLES.indexOf("wordpress developer") !== -1);
+  assert(AA_DEFAULT_JOB_ROLES.indexOf("php developer") !== -1);
+  assert(AA_DEFAULT_JOB_ROLES.indexOf("frontend developer") !== -1);
+
   console.log("test_fixes.js: all checks passed");
 })();

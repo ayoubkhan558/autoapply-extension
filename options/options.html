@@ -76,6 +76,7 @@
               <select id="aiProvider">
                 <option value="gemini">Google Gemini</option>
                 <option value="groq">Groq</option>
+                <option value="xai">xAI (Grok)</option>
                 <option value="openrouter">OpenRouter</option>
               </select>
             </label>
@@ -93,7 +94,7 @@
             <button id="parseResume" class="aa-btn aa-btn--primary">Import resume with AI</button>
             <span id="aiStatus" class="aa-status"></span>
           </div>
-          <p class="aa-muted aa-muted--small">Resume text (or the PDF, for Gemini) is sent to the selected provider to extract fields. Free keys: aistudio.google.com, console.groq.com, openrouter.ai.</p>
+          <p class="aa-muted aa-muted--small">Resume text (or the PDF, for Gemini) is sent to the selected provider to extract fields. Keys: aistudio.google.com, console.groq.com, console.x.ai, openrouter.ai.</p>
         </div>
 
       </section>
@@ -116,9 +117,9 @@
               <textarea id="detectKeywords" rows="3" spellcheck="false" placeholder="e.g. join our team, internship application"></textarea>
               <small class="aa-field-help">Built-in matching keywords are shown below. Add only extra phrases here.</small>
             </label>
-            <label class="aa-field-line__field aa-field-line__field--grow">Job titles / role names to detect
-              <textarea id="detectRoles" rows="3" spellcheck="false" placeholder="e.g. WordPress Developer, SEO Developer, ERP Developer"></textarea>
-              <small class="aa-field-help">When these titles appear on a page with application fields, AutoApply treats it as a job form.</small>
+            <label class="aa-field-line__field aa-field-line__field--grow">Extra job titles / role names (comma or newline — added to the built-in list)
+              <textarea id="detectRoles" rows="3" spellcheck="false" placeholder="e.g. SEO Developer, ERP Developer"></textarea>
+              <small class="aa-field-help">Built-in titles are listed below. Add only extras here.</small>
             </label>
             <label class="aa-field-line__field">Minimum fields for a job form
               <input id="detectMinFields" type="number" min="1" max="50" step="1" />
@@ -127,6 +128,11 @@
           <details class="aa-keyword-reference">
             <summary>Default job-form keywords used for detection</summary>
             <p id="defaultJobKeywords" class="aa-keyword-reference__list"></p>
+          </details>
+          <!-- v1.26: show built-in role titles the same way as keywords -->
+          <details class="aa-keyword-reference">
+            <summary>Default job titles / roles used for detection</summary>
+            <p id="defaultJobRoles" class="aa-keyword-reference__list"></p>
           </details>
           <button id="saveDetect" class="aa-btn aa-btn--ghost">Save detection settings</button>
           <span id="detectStatus" class="aa-status"></span>

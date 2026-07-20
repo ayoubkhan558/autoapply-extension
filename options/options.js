@@ -8,23 +8,6 @@ const SECTIONS = (typeof aaFormGroups === "function") ? aaFormGroups() : [];
 // Add a section or field there and it appears here automatically.
 const REPEATERS = (typeof aaRepeaterGroups === "function") ? aaRepeaterGroups() : [];
 
-// Commonly-requested fields used for the completeness meter.
-const COMMON_FIELDS = [
-  { section: "personal", field: "firstName", label: "First name" },
-  { section: "personal", field: "lastName", label: "Last name" },
-  { section: "personal", field: "email", label: "Email" },
-  { section: "personal", field: "phone", label: "Phone" },
-  { section: "address", field: "city", label: "City" },
-  { section: "address", field: "country", label: "Country" },
-  { section: "links", field: "linkedin", label: "LinkedIn" },
-  { section: "professional", field: "currentTitle", label: "Current title" },
-  { section: "professional", field: "experienceYears", label: "Years of experience" },
-  { section: "professional", field: "skills", label: "Skills" },
-  { section: "professional", field: "noticePeriod", label: "Notice period" },
-  { section: "professional", field: "desiredSalary", label: "Desired salary" },
-  { section: "professional", field: "workAuthorization", label: "Work authorization" }
-];
-
 function renderCompleteness(prof) {
   const host = document.getElementById("completenessBody");
   if (!host || !prof) return;
@@ -73,15 +56,16 @@ let DATA = null;
 let lastGoodJson = "";
 let rawTimer = null;
 
-const AA_DEFAULT_JOB_KEYWORDS = ["apply now", "apply for the job", "apply for job", "job application", "application form", "fill job form", "fill application", "submit application", "apply for this job", "apply for this position", "cover letter", "upload cover letter", "resume", "upload resume", "cv", "upload cv", "upload cv/resume", "curriculum vitae", "work authorization", "notice period", "expected salary", "current salary", "salary expectation", "years of experience", "linkedin profile", "why do you want", "equal opportunity employer", "we're hiring", "we’re hiring", "position applied", "current company", "current working status", "employment status", "willing to relocate", "visa sponsorship", "earliest start date", "date available", "availability date", "employment history", "desired salary", "hiring process", "candidate profile", "personal information", "professional information", "attach resume", "attach cv"];
 let PENDING_CV_FILE = null;
 let PENDING_PHOTO_FILE = null;
 
-// AA_DEFAULT_BLOCKED_SITES comes from lib/storage.js (shared with the content script).
+  // AA_DEFAULT_BLOCKED_SITES / AA_DEFAULT_JOB_KEYWORDS / AA_DEFAULT_JOB_ROLES
+  // come from lib/storage.js (shared with the content script).
 
 const DEFAULT_MODELS = {
   gemini: "gemini-1.5-flash",
   groq: "llama-3.3-70b-versatile",
+  xai: "grok-4",
   openrouter: "meta-llama/llama-3.3-70b-instruct:free"
 };
 
@@ -136,16 +120,10 @@ const AA_TAB_ICONS = {
   _default: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle></svg>'
 };
 
-function activeProfile() {
-  return DATA.profiles.find(function (p) { return p.id === DATA.activeProfileId; }) || DATA.profiles[0];
-}
+function activeProfile() { return aaGetActiveProfile(DATA); }
 
 function ensureArray(obj, key) {
   if (!Array.isArray(obj[key])) obj[key] = obj[key] ? [obj[key]] : [];
-}
-
-function labelize(s) {
-  return s.replace(/([A-Z])/g, " $1").replace(/^./, function (c) { return c.toUpperCase(); }).trim();
 }
 
 // Build one labelled form row. `isLong` -> textarea; `isList` -> the value is
@@ -168,16 +146,6 @@ function makeRow(labelText, value, data, isLong, isList) {
   row.appendChild(input);
   if (isLong) row.classList.add("aa-field-grid__row--full");
   return row;
-}
-
-function makeHeader(text) {
-  const head = document.createElement("div");
-  head.className = "aa-section-head";
-  const h = document.createElement("h2");
-  h.className = "aa-section-head__title";
-  h.textContent = text;
-  head.appendChild(h);
-  return head;
 }
 
 function makeHeaderWithButton(text, btnText, onClick) {
@@ -452,19 +420,14 @@ function setStatus(t, kind) {
   }
 }
 
-function setRawStatus(t, kind) {
-  const s = document.getElementById("rawStatus");
+function setElStatus(id, baseClass, t, kind) {
+  const s = document.getElementById(id);
   if (!s) return;
   s.textContent = t;
-  s.className = "aa-raw-status " + (kind ? "aa-" + kind : "");
+  s.className = baseClass + " " + (kind ? "aa-" + kind : "");
 }
-
-function setAiStatus(t, kind) {
-  const s = document.getElementById("aiStatus");
-  if (!s) return;
-  s.textContent = t;
-  s.className = "aa-status " + (kind ? "aa-" + kind : "");
-}
+function setRawStatus(t, kind) { setElStatus("rawStatus", "aa-raw-status", t, kind); }
+function setAiStatus(t, kind) { setElStatus("aiStatus", "aa-status", t, kind); }
 
 async function save() {
   const saveBtn = document.getElementById("saveBtn");
@@ -586,13 +549,6 @@ function aaMergeIntoProfile(prof, parsed) {
   }
 }
 
-function setCvStatus(t, kind) {
-  const s = document.getElementById("cvStatus");
-  if (!s) return;
-  s.textContent = t;
-  s.className = "aa-status " + (kind ? "aa-" + kind : "");
-}
-
 function aaFileToDataUrl(file) {
   return new Promise(function (resolve, reject) {
     const fr = new FileReader();
@@ -700,11 +656,15 @@ async function init() {
   document.getElementById("detectAllow").value = asText(detect.allowlist);
   document.getElementById("detectBlock").value = asText(detect.blocklist) || AA_DEFAULT_BLOCKED_SITES.join("\n");
   document.getElementById("detectKeywords").value = asText(detect.keywords);
+  // Roles textarea is extras only; built-ins always apply at runtime.
   const rolesEl = document.getElementById("detectRoles");
   if (rolesEl) rolesEl.value = asText(detect.roles || detect.jobTitles || "");
   document.getElementById("detectMinFields").value = String(parseInt(detect.minFields, 10) || 4);
   const kw = document.getElementById("defaultJobKeywords");
   if (kw) kw.textContent = AA_DEFAULT_JOB_KEYWORDS.join(", ");
+  // v1.26: mirror keywords reference for the built-in role list.
+  const rolesRef = document.getElementById("defaultJobRoles");
+  if (rolesRef) rolesRef.textContent = AA_DEFAULT_JOB_ROLES.join(", ");
 
   document.getElementById("saveDetect").addEventListener("click", async function () {
     const s = await aaLoadSettings();

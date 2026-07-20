@@ -93,34 +93,33 @@ chrome.commands.onCommand.addListener(function (command) {
   }
 });
 
+function aaAiReply(payload, fn, sendResponse, resultKey) {
+  aaAiOpts(payload)
+    .then(fn)
+    .then(function (result) {
+      const resp = { ok: true };
+      resp[resultKey || "data"] = result;
+      sendResponse(resp);
+    })
+    .catch(function (err) { sendResponse({ ok: false, error: String((err && err.message) || err) }); });
+}
+
 chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
   if (msg && msg.action === "aa-parse-resume") {
-    aaAiOpts(msg.payload)
-      .then(aaCallProvider)
-      .then(function (json) { sendResponse({ ok: true, data: json }); })
-      .catch(function (err) { sendResponse({ ok: false, error: String((err && err.message) || err) }); });
+    aaAiReply(msg.payload, aaCallProvider, sendResponse);
     return true;
   }
   if (msg && msg.action === "aa-analyze-job") {
-    aaAiOpts(msg.payload)
-      .then(aaAnalyzeJob)
-      .then(function (json) { sendResponse({ ok: true, data: json }); })
-      .catch(function (err) { sendResponse({ ok: false, error: String((err && err.message) || err) }); });
+    aaAiReply(msg.payload, aaAnalyzeJob, sendResponse);
     return true;
   }
   if (msg && msg.action === "aa-answer-questions") {
-    aaAiOpts(msg.payload)
-      .then(aaAnswerQuestions)
-      .then(function (json) { sendResponse({ ok: true, data: json }); })
-      .catch(function (err) { sendResponse({ ok: false, error: String((err && err.message) || err) }); });
+    aaAiReply(msg.payload, aaAnswerQuestions, sendResponse);
     return true;
   }
   // Draft an application email + cover letter for the current job posting.
   if (msg && msg.action === "aa-generate-application") {
-    aaAiOpts(msg.payload)
-      .then(aaGenerateApplication)
-      .then(function (json) { sendResponse({ ok: true, data: json }); })
-      .catch(function (err) { sendResponse({ ok: false, error: String((err && err.message) || err) }); });
+    aaAiReply(msg.payload, aaGenerateApplication, sendResponse);
     return true;
   }
   if (msg && msg.action === "aa-form-detected") {
@@ -142,10 +141,7 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     return false;
   }
   if (msg && msg.action === "aa-list-models") {
-    aaAiOpts(msg.payload)
-      .then(aaListModels)
-      .then(function (models) { sendResponse({ ok: true, models: models }); })
-      .catch(function (err) { sendResponse({ ok: false, error: String((err && err.message) || err) }); });
+    aaAiReply(msg.payload, aaListModels, sendResponse, "models");
     return true;
   }
 });

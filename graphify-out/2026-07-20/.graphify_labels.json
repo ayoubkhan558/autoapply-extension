@@ -9,14 +9,10 @@
   "7": "storage.js",
   "8": "extract.js",
   "9": "aaFillSingleField",
-  "10": "panel.js",
-  "11": "fill.js",
-  "12": "split-content.js",
   "13": "fields.js",
   "14": "popup.js",
   "15": "background.js",
   "16": "aaSetupFieldAi",
   "17": "matcher.js",
-  "18": "field-ai.js",
   "19": "test_fixes.js"
 }

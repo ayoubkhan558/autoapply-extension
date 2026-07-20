@@ -27,7 +27,7 @@ function ensureContentAndSend(tabId, message, onResult) {
     chrome.scripting.insertCSS({ target: { tabId: tabId, allFrames: true }, files: ["content.css"] }, function () {
       void chrome.runtime.lastError;
       chrome.scripting.executeScript(
-        { target: { tabId: tabId, allFrames: true }, files: ["lib/fields.js", "lib/matcher.js", "lib/storage.js", "content.js"] },
+        { target: { tabId: tabId, allFrames: true }, files: ["lib/fields.js", "lib/matcher.js", "lib/storage.js", "content/dom.js", "content/fill.js", "content/panel.js", "content/detect.js", "content/field-ai.js", "content.js"] },
         function () {
           if (chrome.runtime.lastError) { onResult(null, chrome.runtime.lastError.message); return; }
           chrome.tabs.sendMessage(tabId, message, function (resp2) {

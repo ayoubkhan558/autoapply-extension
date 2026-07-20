@@ -32,13 +32,13 @@ profile you store locally as **JSON**. No build step, no servers, privacy-first.
 Auto-fill your profile from a PDF or DOCX resume:
 
 1. Open **Options**.
-2. Pick an **AI provider** (Google Gemini, Groq, or OpenRouter), paste a **free API key**, and click **Save key**. You can store a key for each provider and switch anytime.
+2. Pick an **AI provider** (Google Gemini, Groq, xAI/Grok, or OpenRouter), paste an **API key**, and click **Save key**. You can store a key for each provider and switch anytime.
 3. Choose your **resume file** (PDF/DOCX) and click **Import resume with AI**.
 4. Review the imported fields, then **Save**.
 
 Notes:
 - The resume text (or, for Gemini, the PDF itself) is sent to the provider you choose to extract fields. Everything else stays local.
-- Free keys: Gemini (aistudio.google.com), Groq (console.groq.com), OpenRouter (openrouter.ai). After saving your key, the **Model** dropdown loads the models your account can use; pick one (a free default is preselected).
+- Keys: Gemini (aistudio.google.com), Groq (console.groq.com), xAI (console.x.ai), OpenRouter (openrouter.ai). After saving your key, the **Model** dropdown loads the models your account can use; pick one (a default is preselected).
 - Text is extracted in-browser with no external libraries. Scanned/image PDFs work best with Gemini.
 
 ## Use it
@@ -98,7 +98,7 @@ Domain entries match subdomains, so `greenhouse.io` also covers `boards.greenhou
 ## How matching works
 
 `lib/matcher.js` holds a dictionary mapping each profile key to label/attribute
-synonyms. For every field, `content.js` builds a signature from its `<label>`,
+synonyms. For every field, the content scripts build a signature from its `<label>`,
 `aria-label`, `placeholder`, `name`, `id`, and `autocomplete`, scores it against the
 dictionary, and fills the best match. Values are set with native setters and
 `input`/`change`/`blur` events are dispatched so **React / Vue** controlled inputs
@@ -110,10 +110,17 @@ register the change.
 autoapply-extension/
 ├─ manifest.json
 ├─ background.js          # context menu, keyboard command, JSON seeding
-├─ content.js             # field detection + filling
+├─ content.js             # boot: message listeners (loads once)
+├─ content/               # page scripts (loaded in order)
+│  ├─ dom.js              # labels, transforms, fill primitives
+│  ├─ fill.js             # planners + main fill run
+│  ├─ panel.js            # analysis / answers / lasso UI
+│  ├─ detect.js           # form detection toast
+│  └─ field-ai.js         # per-field AI button
 ├─ content.css            # highlight style
 ├─ data/profile.default.json   # JSON backend (default shape)
 ├─ lib/
+│  ├─ fields.js           # field registry
 │  ├─ matcher.js          # synonym dictionary + scorer
 │  └─ storage.js          # load/save JSON helpers
 ├─ popup/  popup.html · popup.js · popup.css

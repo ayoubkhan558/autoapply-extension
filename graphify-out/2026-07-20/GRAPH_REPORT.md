@@ -1,11 +1,11 @@
 # Graph Report - autoapply-extension  (2026-07-20)
 
 ## Corpus Check
-- 21 files · ~30,360 words
+- 15 files · ~29,922 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 353 nodes · 595 edges · 20 communities (19 shown, 1 thin omitted)
+- 332 nodes · 691 edges · 16 communities (15 shown, 1 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 12 edges (avg confidence: 0.5)
 - Token cost: 0 input · 0 output
 
@@ -17,6 +17,7 @@
 ## Community Hubs (Navigation)
 - options.js
 - manifest.json
+- content.js
 - aaEl
 - ai.js
 - AutoApply — Form Autofiller (Chrome Extension)
@@ -24,28 +25,24 @@
 - storage.js
 - extract.js
 - aaFillSingleField
-- panel.js
-- fill.js
-- split-content.js
 - fields.js
 - popup.js
 - background.js
 - aaSetupFieldAi
 - matcher.js
-- field-ai.js
 - test_fixes.js
 
 ## God Nodes (most connected - your core abstractions)
-1. `renderForm()` - 17 edges
-2. `init()` - 17 edges
-3. `Apple — Style Reference` - 13 edges
-4. `aaEl()` - 12 edges
-5. `Components` - 12 edges
-6. `collectForm()` - 11 edges
-7. `AutoApply — Form Autofiller (Chrome Extension)` - 11 edges
-8. `runAnswerQuestions()` - 10 edges
-9. `activeProfile()` - 10 edges
-10. `renderRaw()` - 10 edges
+1. `getLabelText()` - 17 edges
+2. `run()` - 17 edges
+3. `renderForm()` - 17 edges
+4. `init()` - 17 edges
+5. `norm()` - 16 edges
+6. `aaEl()` - 15 edges
+7. `getAttrText()` - 14 edges
+8. `fillCustomSelects()` - 14 edges
+9. `aaFillSingleField()` - 13 edges
+10. `Apple — Style Reference` - 13 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `init()` --references--> `AA_DEFAULT_BLOCKED_SITES`  [EXTRACTED]
@@ -56,7 +53,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (20 total, 1 thin omitted)
+## Communities (16 total, 1 thin omitted)
 
 ### Community 0 - "options.js"
 Cohesion: 0.16
@@ -66,9 +63,13 @@ Nodes (37): AA_TAB_ICONS, aaFileToDataUrl(), aaMergeIntoProfile(), aaMergeObj(),
 Cohesion: 0.06
 Nodes (35): action, default_icon, default_popup, background, service_worker, commands, fill-form, content_scripts (+27 more)
 
-### Community 3 - "aaEl"
+### Community 2 - "content.js"
 Cohesion: 0.09
-Nodes (38): aaNextMonthFirstDate(), aaText(), applyCheck(), applyResume(), applyTextValue(), buildFlat(), checkEl(), commitSelect() (+30 more)
+Nodes (73): aaAiNote(), aaCollectQuestions(), aaCountFillable(), aaFillContext(), aaFillSingleField(), aaFindAddButton(), aaIsAiTextField(), aaIsHidden() (+65 more)
+
+### Community 3 - "aaEl"
+Cohesion: 0.18
+Nodes (23): aaAppBlock(), aaCopyText(), aaDot(), aaEffortScore(), aaEl(), aaIcon(), aaJobText(), aaPickJobText() (+15 more)
 
 ### Community 4 - "ai.js"
 Cohesion: 0.21
@@ -94,18 +95,6 @@ Nodes (11): aaBytesToLatin1(), aaDecodeXmlEntities(), aaDocxXmlToText(), aaExtra
 Cohesion: 0.22
 Nodes (8): Accessibility & Inclusion, Anti-references, Brand Personality, Design Principles, Product, Product Purpose, Register, Users
 
-### Community 10 - "panel.js"
-Cohesion: 0.17
-Nodes (31): aaAppBlock(), aaCollectQuestions(), aaCopyText(), aaDot(), aaEffortScore(), aaEl(), aaIcon(), aaIsQuestionField() (+23 more)
-
-### Community 11 - "fill.js"
-Cohesion: 0.21
-Nodes (19): aaFillContext(), aaFindAddButton(), aaIsHidden(), aaLoadActivePhoto(), aaLoadActiveResume(), aaMenuId(), aaRepeaterEmpties(), customSelectLabel() (+11 more)
-
-### Community 12 - "split-content.js"
-Cohesion: 0.12
-Nodes (13): body, end, fs, iDetect, iDetectTimers, iFieldAi, iFill, iListener (+5 more)
-
 ### Community 13 - "fields.js"
 Cohesion: 0.39
 Nodes (6): aaFieldDescriptor(), aaFieldKey(), aaFormGroups(), aaMatcherFields(), aaRepeaterFields(), aaRepeaterGroups()
@@ -119,19 +108,15 @@ Cohesion: 0.32
 Nodes (5): aaActiveProfileLabel(), aaAiOpts(), aaAiReply(), aaTabFrameCounts, aaUpdateMenuTitle()
 
 ### Community 16 - "aaSetupFieldAi"
-Cohesion: 0.31
-Nodes (12): aaCleanHost(), aaCountFillable(), aaCustomKeywords(), aaDetectionAllowed(), aaHostAllowed(), aaHostList(), aaJobSignal(), aaMinFields() (+4 more)
-
-### Community 18 - "field-ai.js"
-Cohesion: 0.53
-Nodes (8): aaAiNote(), aaFillSingleField(), aaHideAiBtn(), aaIsAiTextField(), aaPositionAiBtn(), aaSetJobFormDetected(), aaSetupFieldAi(), aaShowAiBtn()
+Cohesion: 0.16
+Nodes (16): aaCleanHost(), aaCustomKeywords(), aaDetectionAllowed(), aaHideAiBtn(), aaHostAllowed(), aaHostList(), aaJobSignal(), aaMinFields() (+8 more)
 
 ### Community 19 - "test_fixes.js"
 Cohesion: 0.40
 Nodes (4): assert, fs, store, vm
 
 ## Knowledge Gaps
-- **97 isolated node(s):** `aaTabFrameCounts`, `AA_RESUME_PROMPT`, `manifest_version`, `name`, `version` (+92 more)
+- **84 isolated node(s):** `aaTabFrameCounts`, `AA_RESUME_PROMPT`, `manifest_version`, `name`, `version` (+79 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **1 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -139,16 +124,16 @@ Nodes (4): assert, fs, store, vm
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `init()` connect `options.js` to `storage.js`?**
-  _High betweenness centrality (0.012) - this node is a cross-community bridge._
+  _High betweenness centrality (0.013) - this node is a cross-community bridge._
 - **Why does `AA_DEFAULT_BLOCKED_SITES` connect `storage.js` to `options.js`?**
-  _High betweenness centrality (0.005) - this node is a cross-community bridge._
+  _High betweenness centrality (0.006) - this node is a cross-community bridge._
 - **Are the 5 inferred relationships involving `init()` (e.g. with `onFieldInput()` and `onRawBlur()`) actually correct?**
   _`init()` has 5 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `aaTabFrameCounts`, `AA_RESUME_PROMPT`, `manifest_version` to the rest of the system?**
-  _97 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _84 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `manifest.json` be split into smaller, more focused modules?**
   _Cohesion score 0.05555555555555555 - nodes in this community are weakly interconnected._
-- **Should `aaEl` be split into smaller, more focused modules?**
-  _Cohesion score 0.08970099667774087 - nodes in this community are weakly interconnected._
+- **Should `content.js` be split into smaller, more focused modules?**
+  _Cohesion score 0.08922621251388374 - nodes in this community are weakly interconnected._
 - **Should `AutoApply — Form Autofiller (Chrome Extension)` be split into smaller, more focused modules?**
   _Cohesion score 0.11764705882352941 - nodes in this community are weakly interconnected._
