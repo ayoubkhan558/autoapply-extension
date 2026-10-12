@@ -1,0 +1,21 @@
+name: Dev-only PR to main
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions: {}
+
+jobs:
+  require-dev-source:
+    name: Require dev source
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify pull request source
+        if: github.head_ref != 'dev' || github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "::error::Pull requests into main must come from the dev branch in this repository."
+          exit 1
+      - name: Confirm pull request source
+        run: echo "Pull request is from dev."
