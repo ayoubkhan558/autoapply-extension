@@ -39,6 +39,11 @@ if (!window.__autoApplyContentLoaded) {
       sendResponse({ ok: true });
       return false;
     }
+    if (msg && msg.action === "aa-show-job-search") {
+      try { aaOpenJobSearchFromStorage(); } catch (e) { /* ignore */ }
+      sendResponse({ ok: true });
+      return false;
+    }
   });
 
 }

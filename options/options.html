@@ -20,9 +20,9 @@
           <svg class="aa-nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
           <span class="aa-nav-item__label">Profile</span>
         </button>
-        <button type="button" class="aa-nav-item" data-tab="api">
-          <svg class="aa-nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-          <span class="aa-nav-item__label">API &amp; resume</span>
+        <button type="button" class="aa-nav-item" data-tab="ai">
+          <svg class="aa-nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.2 3.6L17 8l-3.8 1.2L12 13l-1.2-3.8L7 8l3.8-1.2L12 3z"></path><path d="M19 14l.8 2.4L22 17l-2.2.7L19 20l-.8-2.3L16 17l2.2-.6L19 14z"></path></svg>
+          <span class="aa-nav-item__label">AI</span>
         </button>
         <button type="button" class="aa-nav-item" data-tab="detection">
           <svg class="aa-nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -48,6 +48,8 @@
             <div class="aa-toolbar__group" role="group" aria-label="Profile actions">
               <button type="button" id="addProfile" class="aa-btn aa-btn--ghost" title="Create a new empty profile">+ New</button>
               <button type="button" id="dupProfile" class="aa-btn aa-btn--ghost" title="Duplicate the current profile">Duplicate</button>
+              <button type="button" id="newProfileFromCv" class="aa-btn aa-btn--ghost" title="Create a new profile from a CV file using AI">New profile from CV</button>
+              <input type="file" id="newProfileCvFile" accept=".pdf,.doc,.docx" hidden />
             </div>
             <button type="button" id="deleteProfile" class="aa-btn aa-btn--remove aa-toolbar__danger" title="Delete the current profile">Delete</button>
           </div>
@@ -58,6 +60,10 @@
             </div>
             <button type="button" id="toggleRaw" class="aa-btn aa-btn--ghost" title="Show or hide the raw JSON editor" aria-pressed="false">Show raw JSON</button>
           </div>
+        </div>
+
+        <div class="aa-profile-import-note aa-hidden">
+          <span id="aiImportStatus" class="aa-status"></span>
         </div>
 
         <div class="aa-completeness">
@@ -78,10 +84,11 @@
         </div>
       </section>
 
-      <!-- API & RESUME TAB -->
-      <section class="aa-tab-panel" data-panel="api">
+      <!-- AI TAB -->
+      <section class="aa-tab-panel" data-panel="ai">
         <div class="aa-card-block aa-card-block--ai">
-          <div class="aa-card-block__title">Import from resume (AI)</div>
+          <div class="aa-card-block__title">AI provider</div>
+          <p class="aa-muted aa-muted--small">Powers CV import, per-field fill on job forms, job-fit analysis, and application drafts. Keys are stored locally in this browser only.</p>
           <div class="aa-field-line">
             <label class="aa-field-line__field">Provider
               <select id="aiProvider">
@@ -97,16 +104,12 @@
             <label class="aa-field-line__field aa-field-line__field--grow">Model
               <select id="aiModel"><option value="">Enter API key, then Refresh models</option></select>
             </label>
-            <button id="saveKey" class="aa-btn aa-btn--ghost">Save key</button>
-            <button id="refreshModels" class="aa-btn aa-btn--ghost">Refresh models</button>
+            <button type="button" id="saveKey" class="aa-btn aa-btn--ghost">Save key</button>
+            <button type="button" id="refreshModels" class="aa-btn aa-btn--ghost">Refresh models</button>
           </div>
-          <div class="aa-field-line">
-            <button id="parseResume" class="aa-btn aa-btn--primary">Import profile CV with AI</button>
-            <span id="aiStatus" class="aa-status"></span>
-          </div>
-          <p class="aa-muted aa-muted--small">Uses the CV saved under Profile (not a separate file). Text or the PDF (Gemini) is sent to the selected provider. Keys: aistudio.google.com, console.groq.com, console.x.ai, openrouter.ai.</p>
+          <span id="aiStatus" class="aa-status"></span>
+          <p class="aa-muted aa-muted--small">Free keys: <a href="https://aistudio.google.com" target="_blank" rel="noopener">aistudio.google.com</a>, <a href="https://console.groq.com" target="_blank" rel="noopener">console.groq.com</a>, <a href="https://console.x.ai" target="_blank" rel="noopener">console.x.ai</a>, <a href="https://openrouter.ai" target="_blank" rel="noopener">openrouter.ai</a>.</p>
         </div>
-
       </section>
 
       <!-- FORM DETECTION TAB -->

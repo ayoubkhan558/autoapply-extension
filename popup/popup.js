@@ -1,13 +1,5 @@
 // AutoApply popup script. Drives the toolbar popup: triggers autofill / field
-// selection / job analysis on the active tab, and manages job-board search shortcuts.
-const BOARDS = {
-  lever: "jobs.lever.co",
-  greenhouse: "boards.greenhouse.io",
-  ashby: "jobs.ashbyhq.com",
-  workable: "apply.workable.com",
-  indeed: "indeed.com"
-};
-
+// selection / job analysis on the active tab, and opens the Google job-search modal.
 function setStatus(text, kind) {
   const s = document.getElementById("status");
   s.textContent = text;
@@ -24,7 +16,7 @@ function ensureContentAndSend(tabId, message, onResult) {
     chrome.scripting.insertCSS({ target: { tabId: tabId, allFrames: true }, files: ["content.css"] }, function () {
       void chrome.runtime.lastError;
       chrome.scripting.executeScript(
-        { target: { tabId: tabId, allFrames: true }, files: ["lib/fields.js", "lib/matcher.js", "lib/storage.js", "content/dom.js", "content/fill.js", "content/panel.js", "content/detect.js", "content/field-ai.js", "content.js"] },
+        { target: { tabId: tabId, allFrames: true }, files: ["lib/fields.js", "lib/matcher.js", "lib/storage.js", "content/dom.js", "content/fill.js", "content/panel.js", "content/detect.js", "content/field-ai.js", "content/job-search.js", "content.js"] },
         function () {
           if (chrome.runtime.lastError) { onResult(null, chrome.runtime.lastError.message); return; }
           chrome.tabs.sendMessage(tabId, message, function (resp2) {
@@ -42,6 +34,13 @@ function withActiveTab(fn) {
     const tab = tabs[0];
     if (!tab || tab.id === undefined) { setStatus("No active tab.", "error"); return; }
     fn(tab);
+  });
+}
+
+function openJobSearch() {
+  chrome.runtime.sendMessage({ action: "aa-open-job-search" }, function () {
+    void chrome.runtime.lastError;
+    window.close();
   });
 }
 
@@ -65,16 +64,6 @@ async function init() {
   if (editBtn) editBtn.addEventListener("click", function () { chrome.runtime.openOptionsPage(); });
   const settingsBtn = document.getElementById("openSettingsBtn");
   if (settingsBtn) settingsBtn.addEventListener("click", function () { chrome.runtime.openOptionsPage(); });
-
-  const settings = await aaLoadSettings();
-  const jobs = settings.jobs || {};
-  document.getElementById("jobRole").value = jobs.role || "";
-  document.getElementById("jobLocation").value = jobs.location || "";
-  const sites = jobs.sites || { lever: true, greenhouse: true, ashby: true };
-  Object.keys(BOARDS).forEach(function (k) {
-    const cb = document.getElementById("site-" + k);
-    if (cb) cb.checked = !!sites[k];
-  });
 
   // Tell the user whether the current page has a detectable form.
   chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
@@ -143,42 +132,20 @@ document.getElementById("selectFieldsBtn").addEventListener("click", function ()
   });
 });
 
-document.getElementById("findJobsBtn").addEventListener("click", async function () {
-  const role = document.getElementById("jobRole").value.trim();
-  const location = document.getElementById("jobLocation").value.trim();
-  const sites = {};
-  const selected = [];
-  Object.keys(BOARDS).forEach(function (k) {
-    const cb = document.getElementById("site-" + k);
-    sites[k] = !!(cb && cb.checked);
-    if (sites[k]) selected.push(BOARDS[k]);
-  });
-
-  const settings = await aaLoadSettings();
-  settings.jobs = { role: role, location: location, sites: sites };
-  await aaSaveSettings(settings);
-
-  if (!role && !selected.length) { setStatus("Enter a role or pick a site.", "error"); return; }
-  const base = (role + " " + location).trim();
-  const queries = selected.length
-    ? selected.map(function (d) { return ("site:" + d + " " + base).trim(); })
-    : [base];
-  queries.forEach(function (q, idx) {
-    chrome.tabs.create({ url: "https://www.google.com/search?q=" + encodeURIComponent(q), active: idx === 0 });
-  });
-  setStatus("Opened " + queries.length + " search tab(s).", "success");
-  setTimeout(function () { window.close(); }, 400);
-});
+document.getElementById("findJobsBtn").addEventListener("click", openJobSearch);
 
 function setupTabs() {
   const tabs = document.querySelectorAll(".aa-tab");
   tabs.forEach(function (t) {
     t.addEventListener("click", function () {
+      if (t.getAttribute("data-tab") === "jobs") {
+        openJobSearch();
+        return;
+      }
       tabs.forEach(function (x) { x.classList.remove("aa-active"); });
       t.classList.add("aa-active");
-      const name = t.getAttribute("data-tab");
-      document.getElementById("panel-apply").classList.toggle("aa-hidden", name !== "apply");
-      document.getElementById("panel-jobs").classList.toggle("aa-hidden", name !== "jobs");
+      document.getElementById("panel-apply").classList.toggle("aa-hidden", false);
+      document.getElementById("panel-jobs").classList.toggle("aa-hidden", true);
     });
   });
 }

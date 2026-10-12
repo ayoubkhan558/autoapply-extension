@@ -103,17 +103,9 @@
 .aa-ext-popup .aa-divider { height: 1px; background: var(--aa-line); margin: 12px 0; }
 
 /* ---- Jobs tab ---- */
-.aa-ext-popup .aa-jobs-title { font-weight: 600; font-size: 13px; margin-bottom: 8px; }
-.aa-ext-popup .aa-jobs-input {
-  width: 100%; min-height: 36px; padding: 7px 9px; margin-bottom: 7px;
-  border: 1px solid var(--aa-line); border-radius: var(--aa-radius);
-  font-family: inherit; font-size: 12px; color: var(--aa-ink); background: var(--aa-surface);
+.aa-ext-popup .aa-jobs-hint {
+  margin: 0 0 8px; font-size: 11px; line-height: 1.35; color: var(--aa-muted);
 }
-.aa-ext-popup .aa-jobs-sites {
-  display: flex; flex-wrap: wrap; gap: 4px 8px;
-  font-size: 11px; color: var(--aa-ink); margin-bottom: 10px;
-}
-.aa-ext-popup .aa-jobs-sites label { display: inline-flex; align-items: center; gap: 4px; }
 
 /* ---- Icons ---- */
 .aa-ext-popup .aa-ico { width: 16px; height: 16px; flex: none; }

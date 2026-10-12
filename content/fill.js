@@ -58,7 +58,7 @@ function planText(controls, flat, customFields) {
     if (!isFillable(el) && !el.isContentEditable) return;
     if (el.isContentEditable && (el.innerText || el.textContent || "").trim()) return;
     if (!el.isContentEditable && el.tagName !== "SELECT" && el.value && el.value.trim()) return;
-    const sig = { text: getLabelText(el), attr: getAttrText(el) };
+    const sig = { text: getLabelText(el), attr: getAttrText(el), salaryCurrency: flat["professional.salaryCurrency"] || "" };
     if (isSearchField(el, sig)) return;
     const best = resolveValue(sig, flat, customFields);
     if (best.score < 0.6) return;
@@ -70,7 +70,77 @@ function planText(controls, flat, customFields) {
   return out;
 }
 
-function pickRadio(group, value) {
+function noticeOptionDays(lbl) {
+  const low = norm(lbl);
+  if (/more than a month|over a month|1\+ month|greater than a month/.test(low)) return 35;
+  if (/immediate|none|^0\s*days?/.test(low)) return 0;
+  const m = low.match(/(\d+)/);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+function pickNoticeRadio(group, value) {
+  let n = parseInt((String(value).match(/\d+/) || [""])[0], 10);
+  if (!n && /immediate|^0$/.test(norm(String(value)))) n = 0;
+  if (isNaN(n)) return null;
+  let best = null;
+  let bestDiff = Infinity;
+  group.forEach(function (r) {
+    const days = noticeOptionDays(optionLabel(r));
+    if (days === null) return;
+    const diff = Math.abs(days - n);
+    if (diff < bestDiff) { bestDiff = diff; best = r; }
+  });
+  return best;
+}
+
+function pickExperienceRadio(group, value) {
+  const m = String(value).match(/[\d.]+/);
+  if (!m) return null;
+  const yrs = parseFloat(m[0]);
+  if (isNaN(yrs)) return null;
+  let best = null;
+  let bestDist = Infinity;
+  group.forEach(function (r) {
+    const range = experienceOptionRange(optionLabel(r));
+    if (!range) return;
+    let dist = 0;
+    if (yrs < range.min) dist = range.min - yrs;
+    else if (yrs > range.max) dist = yrs - range.max;
+    if (dist < bestDist) { bestDist = dist; best = r; }
+  });
+  return best;
+}
+
+function experienceOptionRange(lbl) {
+  const low = norm(lbl);
+  const plus = low.match(/^(\d+)\s*\+|^(\d+)\s*plus|more than\s*(\d+)/);
+  if (plus) {
+    const n = parseInt(plus[1] || plus[2] || plus[3], 10);
+    return n <= 100 ? { min: n, max: 999 } : null;
+  }
+  const range = low.match(/(\d+)\s*[-–]\s*(\d+)/);
+  if (!range) return null;
+  const min = parseInt(range[1], 10);
+  const max = parseInt(range[2], 10);
+  return max <= 100 ? { min: min, max: max } : null;
+}
+
+function groupIsYearRanges(group) {
+  let n = 0;
+  group.forEach(function (r) { if (experienceOptionRange(optionLabel(r))) n++; });
+  return n >= 2 && n >= group.length * 0.5;
+}
+
+function pickRadio(group, value, sig) {
+  const q = norm(((sig && sig.text) || "") + " " + questionText(group[0]));
+  if (/notice|how soon can you join/.test(q)) {
+    const hit = pickNoticeRadio(group, value);
+    if (hit) return hit;
+  }
+  if (groupIsYearRanges(group)) {
+    const hit = pickExperienceRadio(group, value);
+    if (hit) return hit;
+  }
   const tokens = valTokens(value);
   let chosen = null;
   group.forEach(function (r) {
@@ -95,14 +165,31 @@ function planRadios(controls, flat, customFields) {
     const key = el.name || ("__nn_" + (el.id || ""));
     (groups[key] = groups[key] || []).push(el);
   });
+  try {
+    document.querySelectorAll('[role="radiogroup"]').forEach(function (rg, idx) {
+      if (aaIsHidden(rg)) return;
+      const radios = [];
+      rg.querySelectorAll('[role="radio"]').forEach(function (r) {
+        if (r.getAttribute("aria-disabled") === "true") return;
+        radios.push(r);
+      });
+      if (!radios.length) return;
+      const key = "__rg_" + idx + "_" + (rg.getAttribute("aria-labelledby") || rg.id || "");
+      groups[key] = radios;
+    });
+  } catch (e) { /* ignore */ }
   Object.keys(groups).forEach(function (key) {
     const group = groups[key];
-    if (group.some(function (r) { return r.checked; })) return;
-    const sig = { text: questionText(group[0]), attr: key };
+    const isWidget = key.indexOf("__rg_") === 0;
+    if (isWidget) {
+      if (group.some(function (r) { return r.getAttribute("aria-checked") === "true"; })) return;
+    } else if (group.some(function (r) { return r.checked; })) return;
+    const sig = { text: questionText(group[0]), attr: getAttrText(group[0]) + " " + key, salaryCurrency: flat["professional.salaryCurrency"] || "" };
     if (isSearchField(group[0], sig)) return;
     const best = resolveValue(sig, flat, customFields);
     if (best.score < 0.6 || best.value === undefined || best.value === null || best.value === "") return;
-    const chosen = pickRadio(group, best.value);
+    const value = transformValue(group[0], sig, String(best.value));
+    const chosen = pickRadio(group, value, sig);
     if (chosen) out.push({ kind: "radio", el: chosen, label: displayLabel(sig, chosen), value: (optionLabel(chosen) || chosen.value || "Selected"), score: best.score, editable: false });
   });
   return out;
@@ -126,22 +213,75 @@ function planCheckboxes(controls, skillTokens) {
   return out;
 }
 
+function aaGformFileWidgets(kind) {
+  const out = [];
+  const isCover = kind === "cover";
+  const isPhoto = kind === "photo";
+  try {
+    document.querySelectorAll(".geS5n [role=\"heading\"]").forEach(function (h) {
+      const t = norm(aaText(h));
+      if (isCover) {
+        if (!/cover letter|coverletter|cover note|covernote/.test(t)) return;
+        if (/resume|cv|curriculum/.test(t)) return;
+      } else if (isPhoto) {
+        if (!/photo|picture|avatar|headshot|profile image/.test(t)) return;
+      } else {
+        if (!/(resume|cv|curriculum)/.test(t)) return;
+        if (/cover letter|coverletter|cover note|covernote/.test(t) && !/(resume|cv|curriculum)/.test(t)) return;
+      }
+      const block = h.closest(".geS5n");
+      if (!block || aaIsHidden(block)) return;
+      if (block.querySelector("[role=\"listitem\"][data-mime-type], [data-mime-type]")) return;
+      const btn = block.querySelector("[aria-label=\"Add file\"], [jsname=\"mWZCyf\"]");
+      if (!btn || aaIsHidden(btn)) return;
+      out.push({ block: block, btn: btn, text: t });
+    });
+  } catch (e) { /* ignore */ }
+  return out;
+}
+
+async function applyGformFile(item) {
+  const block = item.block;
+  if (block && block.querySelector("[role=\"listitem\"][data-mime-type], [data-mime-type]")) {
+    markFilled(item.el, item.score);
+    return true;
+  }
+  try { item.el.click(); } catch (e) { return false; }
+  await sleep(500);
+  let input = block && block.querySelector('input[type="file"]');
+  if (!input) {
+    collectControls().forEach(function (el) {
+      if (input || (el.type || "").toLowerCase() !== "file" || el.disabled) return;
+      const lbl = norm(getLabelText(el) + " " + getAttrText(el));
+      if (item.kind === "cover") {
+        if (/cover letter|coverletter|cover note|covernote/.test(lbl) && !/resume|cv|curriculum/.test(lbl)) input = el;
+      } else if (/resume|cv|curriculum/.test(lbl)) input = el;
+    });
+  }
+  if (!input) return false;
+  return aaSetFileInput(input, item.stored, item.score);
+}
+
 async function planResume() {
-  const inputs = [];
-  collectControls().forEach(function (el) { if ((el.type || "").toLowerCase() === "file" && !el.disabled) inputs.push(el); });
-  if (!inputs.length) return null;
   let stored = null;
   try { stored = await aaLoadActiveResume(); } catch (e) { stored = null; }
   if (!stored || !stored.dataUrl) return null;
-  let target = null;
+  const inputs = [];
+  collectControls().forEach(function (el) { if ((el.type || "").toLowerCase() === "file" && !el.disabled) inputs.push(el); });
   for (let i = 0; i < inputs.length; i++) {
     const el = inputs[i];
     const lbl = norm(getLabelText(el) + " " + getAttrText(el));
     if (/cover letter|coverletter|cover note|covernote/.test(lbl) && !/resume|cv|curriculum/.test(lbl)) continue;
-    if (/resume|cv|curriculum/.test(lbl) || inputs.length === 1) { target = el; break; }
+    if (/resume|cv|curriculum/.test(lbl) || inputs.length === 1) {
+      return { kind: "resume", el: el, label: "Attach CV: " + (stored.name || "resume"), value: (stored.name || "resume"), score: 0.9, editable: false, stored: stored };
+    }
   }
-  if (!target) return null;
-  return { kind: "resume", el: target, label: "Attach CV: " + (stored.name || "resume"), value: (stored.name || "resume"), score: 0.9, editable: false, stored: stored };
+  const widgets = aaGformFileWidgets("resume");
+  if (widgets.length) {
+    const w = widgets[0];
+    return { kind: "resume", gform: true, el: w.btn, block: w.block, label: "Attach CV: " + (stored.name || "resume"), value: (stored.name || "resume"), score: 0.9, editable: false, stored: stored };
+  }
+  return null;
 }
 
 // Attach the profile photo to photo/picture/avatar upload fields.
@@ -172,8 +312,13 @@ async function planCoverLetter() {
     const el = inputs[i];
     const lbl = norm(getLabelText(el) + " " + getAttrText(el));
     if (/cover letter|coverletter|cover note|covernote|upload cover|attach cover/.test(lbl) && !/resume|cv|curriculum/.test(lbl)) {
-      return { kind: "resume", el: el, label: "Attach cover letter: " + (stored.name || "cover-letter"), value: stored.name || "cover-letter", score: 0.9, editable: false, stored: stored };
+      return { kind: "cover", el: el, label: "Attach cover letter: " + (stored.name || "cover-letter"), value: stored.name || "cover-letter", score: 0.9, editable: false, stored: stored };
     }
+  }
+  const widgets = aaGformFileWidgets("cover");
+  if (widgets.length) {
+    const w = widgets[0];
+    return { kind: "cover", gform: true, el: w.btn, block: w.block, label: "Attach cover letter: " + (stored.name || "cover-letter"), value: stored.name || "cover-letter", score: 0.9, editable: false, stored: stored };
   }
   return null;
 }
@@ -234,7 +379,7 @@ async function fillCustomSelects(ctx, box, filledEls) {
   for (let i = 0; i < triggers.length && i < 30; i++) {
     const trg = triggers[i];
     try {
-      const sig = { text: customSelectLabel(trg), attr: getAttrText(trg) };
+      const sig = { text: customSelectLabel(trg), attr: getAttrText(trg), salaryCurrency: ctx.flat["professional.salaryCurrency"] || "" };
       if (!sig.text && !sig.attr) continue;
       if (isSearchField(trg, sig)) continue;
       const best = resolveValue(sig, ctx.flat, ctx.customFields);
@@ -381,11 +526,11 @@ async function run() {
   try { filled += await fillCustomSelects(ctx); } catch (e) { /* ignore */ }
   try { filled += await fillRepeaterSections(ctx); } catch (e) { /* ignore */ }
   const resume = await planResume();
-  if (resume) { try { if (await applyResume(resume)) filled++; } catch (e) { /* ignore */ } }
+  if (resume) { try { if (await (resume.gform ? applyGformFile(resume) : applyResume(resume))) filled++; } catch (e) { /* ignore */ } }
   const photo = await planPhoto();
-  if (photo) { try { if (await applyResume(photo)) filled++; } catch (e) { /* ignore */ } }
+  if (photo) { try { if (await (photo.gform ? applyGformFile(photo) : applyResume(photo))) filled++; } catch (e) { /* ignore */ } }
   const cover = await planCoverLetter();
-  if (cover) { try { if (await applyResume(cover)) filled++; } catch (e) { /* ignore */ } }
+  if (cover) { try { if (await (cover.gform ? applyGformFile(cover) : applyResume(cover))) filled++; } catch (e) { /* ignore */ } }
   try { aaShowFillResult(filled, aaUnfilledFields(controls, true)); } catch (e) { /* ignore */ }
   if (filled > 0) { try { aaRecordFill(aaTopHost(), filled); } catch (e) { /* ignore */ } }
   return { filled: filled };

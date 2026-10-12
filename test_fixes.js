@@ -64,6 +64,91 @@ vm.runInThisContext(fs.readFileSync("lib/storage.js", "utf8"));
   assert(noticeHit.key === "professional.noticePeriod" && noticeHit.score >= 0.6, "Notice Period -> " + noticeHit.key);
   const joinHit = AutoApplyMatcher.match({ text: "How soon can you join? (Days)", attr: "" });
   assert(joinHit.key === "professional.noticePeriod" && joinHit.score >= 0.6, "How soon -> " + joinHit.key);
+  const gformHit = AutoApplyMatcher.match({ text: "What is your notice period with your current employer", attr: "" });
+  assert(gformHit.key === "professional.noticePeriod" && gformHit.score >= 0.6, "Google Forms notice -> " + gformHit.key);
+
+  // Google Forms notice radios: closest day bucket (mirror content/fill.js).
+  function noticeOptionDays(lbl) {
+    const low = (lbl || "").toLowerCase().trim();
+    if (/more than a month/.test(low)) return 35;
+    const m = low.match(/(\d+)/);
+    return m ? parseInt(m[1], 10) : null;
+  }
+  function pickNoticeRadioLabels(opts, value) {
+    const n = parseInt((String(value).match(/\d+/) || [""])[0], 10);
+    if (!n) return null;
+    let best = null;
+    let bestDiff = Infinity;
+    opts.forEach(function (lbl) {
+      const days = noticeOptionDays(lbl);
+      if (days === null) return;
+      const diff = Math.abs(days - n);
+      if (diff < bestDiff) { bestDiff = diff; best = lbl; }
+    });
+    return best;
+  }
+  const gformOpts = ["7 Days", "14 Days", "21 Days", "28 Days", "More than a month"];
+  assert(pickNoticeRadioLabels(gformOpts, "30 days") === "28 Days", "30 days -> 28 Days");
+  assert(pickNoticeRadioLabels(gformOpts, "7") === "7 Days", "7 -> 7 Days");
+  assert(pickNoticeRadioLabels(gformOpts, "45 days") === "More than a month", "45 days -> More than a month");
+
+  const expHit = AutoApplyMatcher.match({ text: "How many years of experience do you have in software/web development?", attr: "" });
+  assert(expHit.key === "professional.experienceYears" && expHit.score >= 0.6, "GForm experience -> " + expHit.key);
+  const salHit = AutoApplyMatcher.match({ text: "Expected monthly salary in USD", attr: "" });
+  assert(salHit.key === "professional.desiredSalary" && salHit.score >= 0.6, "GForm salary -> " + salHit.key);
+
+  function experienceOptionRange(lbl) {
+    const low = (lbl || "").toLowerCase().trim();
+    const plus = low.match(/^(\d+)\s*\+|^(\d+)\s*plus|more than\s*(\d+)/);
+    if (plus) {
+      const n = parseInt(plus[1] || plus[2] || plus[3], 10);
+      return n <= 100 ? { min: n, max: 999 } : null;
+    }
+    const range = low.match(/(\d+)\s*[-–]\s*(\d+)/);
+    if (!range) return null;
+    const min = parseInt(range[1], 10);
+    const max = parseInt(range[2], 10);
+    return max <= 100 ? { min: min, max: max } : null;
+  }
+  function pickExperienceRadioLabels(opts, value) {
+    const m = String(value).match(/[\d.]+/);
+    if (!m) return null;
+    const yrs = parseFloat(m[0]);
+    let best = null;
+    let bestDist = Infinity;
+    opts.forEach(function (lbl) {
+      const range = experienceOptionRange(lbl);
+      if (!range) return;
+      let dist = 0;
+      if (yrs < range.min) dist = range.min - yrs;
+      else if (yrs > range.max) dist = yrs - range.max;
+      if (dist < bestDist) { bestDist = dist; best = lbl; }
+    });
+    return best;
+  }
+  const expOpts = ["0-1", "2-3", "4-5", "6+"];
+  assert(pickExperienceRadioLabels(expOpts, "5 years") === "4-5", "5 yrs -> 4-5");
+  assert(pickExperienceRadioLabels(expOpts, "7") === "6+", "7 yrs -> 6+");
+
+  const PKR_USD = 280;
+  function normSalary(value, profileCurrency, wantCur, wantPeriod) {
+    const raw = String(value || "");
+    const low = raw.toLowerCase();
+    let cur = (profileCurrency || "").toUpperCase();
+    if (/\bpkr\b|rs\b/.test(low)) cur = "PKR";
+    if (/\busd\b/.test(low)) cur = "USD";
+    let period = /month/.test(low) ? "month" : (/year|ctc/.test(low) ? "year" : null);
+    let n = parseFloat(raw.replace(/[^0-9.]/g, ""));
+    if (!cur && wantCur === "USD" && n >= 50000) cur = "PKR";
+    if (!period && n >= 500000 && (!cur || cur === "PKR")) { n = n / 12; period = "month"; }
+    if (period === "year" && wantPeriod === "month") n = n / 12;
+    if (cur === "PKR" && wantCur === "USD") n = Math.round(n / PKR_USD);
+    return n;
+  }
+  assert(normSalary("150000 PKR/month", "", "USD", "month") === 536, "150k PKR/mo -> USD");
+  assert(normSalary("1800000", "PKR", "USD", "month") === 536, "1.8M annual PKR -> USD/mo");
+
+  assert(/(resume|cv|curriculum)/.test("upload your cv/resume"), "GForm CV heading match");
 
   // Search/filter exclusion hay (mirror content/dom.js isSearchField attr scan).
   const SEARCH_FILTER_RE = /typeahead|searchbox|semanticsearch|filter-input|autosuggest|describe the job you want/;

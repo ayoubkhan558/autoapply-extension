@@ -104,7 +104,32 @@ function aaAiReply(payload, fn, sendResponse, resultKey) {
     .catch(function (err) { sendResponse({ ok: false, error: String((err && err.message) || err) }); });
 }
 
+function aaOpenJobSearchTab() {
+  chrome.tabs.create({ url: "https://www.google.com/?aa_jobs=1", active: true }, function (tab) {
+    if (!tab || tab.id === undefined) return;
+    function ping() {
+      chrome.tabs.sendMessage(tab.id, { action: "aa-show-job-search" }, function () {
+        void chrome.runtime.lastError;
+      });
+    }
+    function onUpdated(tabId, info) {
+      if (tabId !== tab.id || info.status !== "complete") return;
+      chrome.tabs.onUpdated.removeListener(onUpdated);
+      // Content script may still be injecting; ping a few times.
+      ping();
+      setTimeout(ping, 400);
+      setTimeout(ping, 1200);
+    }
+    chrome.tabs.onUpdated.addListener(onUpdated);
+  });
+}
+
 chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
+  if (msg && msg.action === "aa-open-job-search") {
+    aaOpenJobSearchTab();
+    sendResponse({ ok: true });
+    return false;
+  }
   if (msg && msg.action === "aa-parse-resume") {
     aaAiReply(msg.payload, aaCallProvider, sendResponse);
     return true;

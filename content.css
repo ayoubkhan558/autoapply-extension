@@ -32,7 +32,7 @@
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  padding: 12px 14px !important;
+  padding: 8px 14px !important;
   background: #0071e3 !important;
   border-radius: 12px 12px 0 0 !important;
 }
@@ -702,3 +702,43 @@
 
 #aa-btn-analyze, #autoapply-panel .aa-btn-analyze { margin-top: 8px !important; background: #fff !important; color: var(--aa-ink) !important; border: 1px solid var(--aa-line) !important; }
 #autoapply-panel .aa-btn-fix + .aa-btn-analyze { margin-top: 8px !important; }
+
+/* ---- Job search modal (Google viewport) ---- */
+#aa-job-search { position: fixed !important; inset: 0 !important; z-index: 2147483646 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important; }
+#aa-job-search * { box-sizing: border-box !important; }
+#aa-job-search .aa-js-backdrop { position: absolute !important; inset: 0 !important; background: rgba(15, 23, 42, .45) !important; }
+#aa-job-search .aa-js-card { position: relative !important; z-index: 1 !important; width: min(560px, calc(100vw - 24px)) !important; max-height: calc(100vh - 24px) !important; overflow: auto !important; margin: 12px auto !important; background: #fff !important; color: #111827 !important; border-radius: 12px !important; border: 1px solid #e5e7eb !important; box-shadow: 0 18px 48px rgba(15, 23, 42, .28) !important; padding: 12px 14px 12px !important; }
+#aa-job-search .aa-js-head { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 8px !important; margin-bottom: 10px !important; }
+#aa-job-search .aa-js-head-right { display: flex !important; align-items: center !important; gap: 6px !important; }
+#aa-job-search .aa-js-title { font-size: 15px !important; font-weight: 700 !important; line-height: 1.2 !important; }
+#aa-job-search .aa-js-sub { font-size: 11px !important; color: #6b7280 !important; margin-top: 1px !important; }
+#aa-job-search .aa-js-reset { border: 1px solid #e5e7eb !important; background: #fff !important; border-radius: 999px !important; padding: 4px 10px !important; font-size: 11px !important; cursor: pointer !important; color: #374151 !important; min-height: 28px !important; }
+#aa-job-search .aa-js-row { margin-bottom: 10px !important; }
+#aa-job-search .aa-js-row--inline { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+#aa-job-search .aa-js-label { display: block !important; font-size: 11px !important; font-weight: 600 !important; color: #4b5563 !important; margin-bottom: 4px !important; }
+#aa-job-search .aa-js-hint { font-weight: 400 !important; color: #9ca3af !important; }
+#aa-job-search .aa-js-row-between { display: flex !important; align-items: center !important; justify-content: space-between !important; margin-bottom: 4px !important; }
+#aa-job-search .aa-js-input, #aa-job-search .aa-js-select { width: 100% !important; min-height: 32px !important; border: 1px solid #d1d5db !important; border-radius: 8px !important; padding: 6px 8px !important; font-size: 12px !important; background: #fff !important; color: #111827 !important; font-family: inherit !important; }
+#aa-job-search .aa-js-roles { min-height: 72px !important; resize: vertical !important; line-height: 1.35 !important; }
+#aa-job-search .aa-js-select { width: auto !important; min-width: 100px !important; flex: 0 0 auto !important; }
+#aa-job-search .aa-js-select--block { width: 100% !important; min-width: 0 !important; }
+#aa-job-search .aa-js-chips { display: flex !important; flex-wrap: wrap !important; gap: 4px !important; }
+#aa-job-search .aa-js-chip { border: 1px solid #d1d5db !important; background: #fff !important; color: #374151 !important; border-radius: 999px !important; padding: 4px 9px !important; font-size: 11px !important; cursor: pointer !important; min-height: 26px !important; }
+#aa-job-search .aa-js-chip.aa-js-on { background: #111827 !important; border-color: #111827 !important; color: #fff !important; }
+#aa-job-search #aaJsLevels .aa-js-chip.aa-js-on { background: #2563eb !important; border-color: #2563eb !important; }
+#aa-job-search .aa-js-sites { display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 3px 8px !important; }
+#aa-job-search .aa-js-sites-group { grid-column: 1 / -1 !important; font-size: 10px !important; font-weight: 700 !important; color: #6b7280 !important; text-transform: uppercase !important; letter-spacing: .04em !important; margin-top: 2px !important; }
+#aa-job-search .aa-js-source-actions { display: inline-flex !important; gap: 6px !important; }
+#aa-job-search .aa-js-linkbtn { border: none !important; background: transparent !important; color: #2563eb !important; font-size: 11px !important; font-weight: 600 !important; cursor: pointer !important; padding: 0 !important; min-height: 0 !important; }
+#aa-job-search .aa-js-linkbtn:hover { text-decoration: underline !important; }
+#aa-job-search .aa-js-site { display: flex !important; align-items: center !important; gap: 4px !important; font-size: 11px !important; color: #374151 !important; cursor: pointer !important; }
+#aa-job-search .aa-js-row--split { display: grid !important; grid-template-columns: 1fr auto !important; gap: 8px !important; align-items: end !important; }
+#aa-job-search .aa-js-grow { min-width: 0 !important; }
+#aa-job-search .aa-js-remote { min-height: 32px !important; border: 1px solid #d1d5db !important; background: #fff !important; border-radius: 999px !important; padding: 0 12px !important; font-size: 11px !important; cursor: pointer !important; color: #374151 !important; white-space: nowrap !important; }
+#aa-job-search .aa-js-remote.aa-js-on { background: #ecfdf5 !important; border-color: #6ee7b7 !important; color: #047857 !important; }
+#aa-job-search .aa-js-submit { width: 100% !important; min-height: 38px !important; margin-top: 2px !important; border: none !important; border-radius: 10px !important; background: #111827 !important; color: #fff !important; font-size: 13px !important; font-weight: 600 !important; cursor: pointer !important; }
+#aa-job-search .aa-js-submit:hover { background: #1f2937 !important; }
+@media (max-width: 640px) {
+  #aa-job-search .aa-js-sites { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  #aa-job-search .aa-js-row--split, #aa-job-search .aa-js-row--inline { grid-template-columns: 1fr !important; }
+}

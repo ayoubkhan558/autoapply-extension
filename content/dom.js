@@ -119,12 +119,69 @@ function isSalaryField(el, sig) {
   return /salary|compensation|\bctc\b|\bpay\b|wage|remuneration/.test(hay);
 }
 
+// ponytail: fixed PKR/USD; include currency in profile value or set salaryCurrency
+var AA_PKR_USD = 280;
+
+function aaParseSalary(value, profileCurrency) {
+  const raw = String(value || "");
+  const low = norm(raw);
+  let currency = profileCurrency ? norm(profileCurrency).toUpperCase().replace(/[^A-Z]/g, "") : "";
+  if (currency === "RS") currency = "PKR";
+  if (/\busd\b|\$|dollar/.test(low)) currency = "USD";
+  else if (/\bpkr\b|₨|rupee|\brs\b/.test(low)) currency = "PKR";
+  let period = null;
+  if (/month|\/mo\b|per month|monthly/.test(low)) period = "month";
+  else if (/year|annual|annum|\/yr|per year|yearly|\bctc\b/.test(low)) period = "year";
+  const amount = parseFloat(raw.replace(/[^0-9.]/g, ""));
+  return { amount: isNaN(amount) ? null : amount, currency: currency || null, period: period };
+}
+
+function aaSalaryFieldWant(sig, el) {
+  const hay = norm(((sig && sig.text) || "") + " " + ((sig && sig.attr) || "") + " " + ((el && el.placeholder) || ""));
+  let currency = null;
+  if (/\busd\b|\$|dollar/.test(hay)) currency = "USD";
+  else if (/\bpkr\b|₨|rupee|\brs\b/.test(hay)) currency = "PKR";
+  let period = null;
+  if (/month|monthly|per month/.test(hay)) period = "month";
+  else if (/year|annual|annum|per year|yearly|\bctc\b/.test(hay)) period = "year";
+  return { currency: currency, period: period };
+}
+
+function aaConvertSalary(amount, from, to) {
+  if (!from || !to || from === to) return amount;
+  if (from === "PKR" && to === "USD") return amount / AA_PKR_USD;
+  if (from === "USD" && to === "PKR") return amount * AA_PKR_USD;
+  return amount;
+}
+
+function aaGuessSalaryCurrency(amount, wantCur) {
+  if (!amount || !wantCur) return null;
+  if (wantCur === "USD" && amount >= 50000) return "PKR";
+  if (wantCur === "PKR" && amount > 0 && amount <= 500) return "USD";
+  return null;
+}
+
 function normalizeCurrency(el, sig, value) {
+  const meta = aaParseSalary(value, sig && sig.salaryCurrency);
+  let n = meta.amount;
+  if (n === null) return String(value).replace(/[^0-9.]/g, "") || value;
+  const want = aaSalaryFieldWant(sig, el);
+  let cur = meta.currency || aaGuessSalaryCurrency(n, want.currency);
+  if (!meta.period && n >= 500000 && (!cur || cur === "PKR")) {
+    n = n / 12;
+    meta.period = "month";
+  }
+  if (want.period && meta.period && want.period !== meta.period) {
+    if (meta.period === "year" && want.period === "month") n = n / 12;
+    else if (meta.period === "month" && want.period === "year") n = n * 12;
+  }
+  if (want.currency && cur) n = aaConvertSalary(n, cur, want.currency);
+  n = Math.round(n);
   const t = (el.type || "").toLowerCase();
-  if (t === "number" || t === "range") return String(value).replace(/[^0-9.]/g, "");
+  if (t === "number" || t === "range") return String(n);
   const hay = norm((el.placeholder || "") + " " + ((sig && sig.attr) || ""));
-  if (/amount|number|\bnum\b|digits/.test(hay)) return String(value).replace(/[^0-9.]/g, "");
-  return value;
+  if (/amount|number|\bnum\b|digits/.test(hay)) return String(n);
+  return String(n);
 }
 
 function transformValue(el, sig, value) {
@@ -151,10 +208,8 @@ function applyCheck(el, score) {
   return ok;
 }
 
-async function applyResume(item) {
-  const stored = item.stored;
-  const el = item.el;
-  if (!stored || !stored.dataUrl) return false;
+async function aaSetFileInput(el, stored, score) {
+  if (!el || !stored || !stored.dataUrl) return false;
   const blob = await (await fetch(stored.dataUrl)).blob();
   const file = new File([blob], stored.name || "resume.pdf", { type: stored.type || blob.type || "application/pdf" });
   const dt = new DataTransfer();
@@ -162,8 +217,12 @@ async function applyResume(item) {
   el.files = dt.files;
   el.dispatchEvent(new Event("input", { bubbles: true }));
   el.dispatchEvent(new Event("change", { bubbles: true }));
-  markFilled(el, item.score);
+  if (score !== undefined) markFilled(el, score);
   return true;
+}
+
+async function applyResume(item) {
+  return aaSetFileInput(item.el, item.stored, item.score);
 }
 
 function norm(s) {
@@ -554,7 +613,21 @@ function questionText(el) {
   const fs = el.closest("fieldset");
   if (fs) { const lg = fs.querySelector("legend"); if (lg) parts.push(lg.textContent); }
   const grp = el.closest('[role="radiogroup"], [role="group"]');
-  if (grp && grp.getAttribute("aria-label")) parts.push(grp.getAttribute("aria-label"));
+  if (grp) {
+    if (grp.getAttribute("aria-label")) parts.push(grp.getAttribute("aria-label"));
+    const labelledby = grp.getAttribute("aria-labelledby");
+    if (labelledby) {
+      labelledby.split(/\s+/).forEach(function (id) {
+        if (!id) return;
+        let n = null;
+        try { n = document.getElementById(id); } catch (e) { /* ignore */ }
+        if (n) {
+          const t = (n.innerText || n.textContent || "").trim();
+          if (t) parts.push(t);
+        }
+      });
+    }
+  }
   let node = el;
   for (let depth = 0; depth < 4 && node; depth++) {
     let sib = node.previousElementSibling;
@@ -581,6 +654,12 @@ function setNativeChecked(el, checked) {
 }
 
 function checkEl(el) {
+  // Google Forms and similar widgets use role="radio" divs instead of inputs.
+  if (el.getAttribute && el.getAttribute("role") === "radio") {
+    if (el.getAttribute("aria-checked") !== "true") { try { el.click(); } catch (e) { /* ignore */ } }
+    el.classList.add(HL_CLASS);
+    return el.getAttribute("aria-checked") === "true";
+  }
   // Prefer a real click: it toggles the control natively and fires the full
   // event sequence (pointer, click, input, change) custom widgets rely on.
   if (!el.checked) { try { el.click(); } catch (e) { /* ignore */ } }

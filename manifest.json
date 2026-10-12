@@ -47,6 +47,7 @@
         "content/panel.js",
         "content/detect.js",
         "content/field-ai.js",
+        "content/job-search.js",
         "content.js"
       ],
       "css": [

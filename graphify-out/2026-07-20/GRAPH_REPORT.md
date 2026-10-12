@@ -1,16 +1,16 @@
 # Graph Report - autoapply-extension  (2026-07-20)
 
 ## Corpus Check
-- 21 files · ~32,091 words
+- 21 files · ~33,982 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 366 nodes · 621 edges · 20 communities (19 shown, 1 thin omitted)
+- 384 nodes · 661 edges · 20 communities (19 shown, 1 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 13 edges (avg confidence: 0.5)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `799227c6`
+- Built from commit: `e9e347d9`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -41,9 +41,9 @@
 3. `Apple — Style Reference` - 13 edges
 4. `aaEl()` - 12 edges
 5. `Components` - 12 edges
-6. `collectForm()` - 11 edges
-7. `AutoApply — Form Autofiller (Chrome Extension)` - 11 edges
-8. `run()` - 10 edges
+6. `run()` - 11 edges
+7. `collectForm()` - 11 edges
+8. `AutoApply — Form Autofiller (Chrome Extension)` - 11 edges
 9. `runAnswerQuestions()` - 10 edges
 10. `activeProfile()` - 10 edges
 
@@ -64,15 +64,15 @@
 
 ### Community 0 - "options.js"
 Cohesion: 0.15
-Nodes (39): AA_TAB_ICONS, aaDataUrlToBase64(), aaFileToDataUrl(), aaMergeIntoProfile(), aaMergeObj(), aaReadInputValue(), aaSendMessage(), aaStoredToFile() (+31 more)
+Nodes (40): AA_TAB_ICONS, aaDataUrlToBase64(), aaFileToDataUrl(), aaMergeIntoProfile(), aaMergeObj(), aaReadInputValue(), aaSendMessage(), aaStoredToFile() (+32 more)
 
 ### Community 1 - "manifest.json"
 Cohesion: 0.06
 Nodes (35): action, default_icon, default_popup, background, service_worker, commands, fill-form, content_scripts (+27 more)
 
 ### Community 3 - "aaEl"
-Cohesion: 0.09
-Nodes (38): aaNextMonthFirstDate(), aaText(), applyCheck(), applyResume(), applyTextValue(), buildFlat(), checkEl(), commitSelect() (+30 more)
+Cohesion: 0.08
+Nodes (43): aaConvertSalary(), aaGuessSalaryCurrency(), aaNextMonthFirstDate(), aaParseSalary(), aaSalaryFieldWant(), aaSetFileInput(), aaText(), applyCheck() (+35 more)
 
 ### Community 4 - "ai.js"
 Cohesion: 0.21
@@ -103,8 +103,8 @@ Cohesion: 0.17
 Nodes (31): aaAppBlock(), aaCollectQuestions(), aaCopyText(), aaDot(), aaEffortScore(), aaEl(), aaIcon(), aaIsQuestionField() (+23 more)
 
 ### Community 11 - "fill.js"
-Cohesion: 0.18
-Nodes (21): aaFillContext(), aaFindAddButton(), aaIsHidden(), aaLoadActiveCoverLetter(), aaLoadActivePhoto(), aaLoadActiveResume(), aaMenuId(), aaRepeaterEmpties() (+13 more)
+Cohesion: 0.15
+Nodes (28): aaFillContext(), aaFindAddButton(), aaGformFileWidgets(), aaIsHidden(), aaLoadActiveCoverLetter(), aaLoadActivePhoto(), aaLoadActiveResume(), aaMenuId() (+20 more)
 
 ### Community 12 - "split-content.js"
 Cohesion: 0.12
@@ -131,8 +131,8 @@ Cohesion: 0.49
 Nodes (9): aaAiNote(), aaFillSingleField(), aaHideAiBtn(), aaIsAiField(), aaPositionAiBtn(), aaScheduleHideAiBtn(), aaSetJobFormDetected(), aaSetupFieldAi() (+1 more)
 
 ### Community 19 - "test_fixes.js"
-Cohesion: 0.40
-Nodes (4): assert, fs, store, vm
+Cohesion: 0.24
+Nodes (8): assert, experienceOptionRange(), fs, noticeOptionDays(), pickExperienceRadioLabels(), pickNoticeRadioLabels(), store, vm
 
 ## Knowledge Gaps
 - **97 isolated node(s):** `aaTabFrameCounts`, `AA_RESUME_PROMPT`, `manifest_version`, `name`, `version` (+92 more)
@@ -143,16 +143,16 @@ Nodes (4): assert, fs, store, vm
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `init()` connect `options.js` to `aaSetupFieldAi`, `storage.js`?**
-  _High betweenness centrality (0.024) - this node is a cross-community bridge._
+  _High betweenness centrality (0.022) - this node is a cross-community bridge._
 - **Why does `AA_DEFAULT_JOB_ROLES` connect `aaSetupFieldAi` to `options.js`, `storage.js`?**
-  _High betweenness centrality (0.018) - this node is a cross-community bridge._
+  _High betweenness centrality (0.017) - this node is a cross-community bridge._
 - **Are the 5 inferred relationships involving `init()` (e.g. with `onFieldInput()` and `onRawBlur()`) actually correct?**
   _`init()` has 5 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `aaTabFrameCounts`, `AA_RESUME_PROMPT`, `manifest_version` to the rest of the system?**
   _97 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `options.js` be split into smaller, more focused modules?**
+  _Cohesion score 0.14878048780487804 - nodes in this community are weakly interconnected._
 - **Should `manifest.json` be split into smaller, more focused modules?**
   _Cohesion score 0.05555555555555555 - nodes in this community are weakly interconnected._
 - **Should `aaEl` be split into smaller, more focused modules?**
-  _Cohesion score 0.08970099667774087 - nodes in this community are weakly interconnected._
-- **Should `AutoApply — Form Autofiller (Chrome Extension)` be split into smaller, more focused modules?**
-  _Cohesion score 0.11764705882352941 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.08244680851063829 - nodes in this community are weakly interconnected._
