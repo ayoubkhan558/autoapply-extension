@@ -1,0 +1,83 @@
+{
+  "contentJs": [
+    "lib/fields.js",
+    "lib/matcher.js",
+    "lib/storage.js",
+    "content/dom/dates.js",
+    "content/dom/phone.js",
+    "content/dom/currency.js",
+    "content/dom/appliers.js",
+    "content/dom/profile.js",
+    "content/dom/labels.js",
+    "content/dom/native-values.js",
+    "content/dom/matching.js",
+    "content/dom/controls.js",
+    "content/eligibility/policy.js",
+    "content/eligibility/roots.js",
+    "content/eligibility/index.js",
+    "content/safety.js",
+    "content/fill/context.js",
+    "content/fill/text-checkboxes.js",
+    "content/fill/radios.js",
+    "content/fill/uploads.js",
+    "content/fill/widgets.js",
+    "content/fill/repeaters.js",
+    "content/fill.js",
+    "content/ui/panel.js",
+    "content/ui/analysis.js",
+    "content/ui/application.js",
+    "content/ui/questions.js",
+    "content/ui/attention.js",
+    "content/ui/results.js",
+    "content/ui/lasso.js",
+    "content/detect.js",
+    "content/field-ai.js",
+    "content/job-search/query.js",
+    "content/job-search/modal.js",
+    "content/job-search/boot.js",
+    "content.js"
+  ],
+  "contentCss": [
+    "content/styles/panel.css",
+    "content/styles/results.css",
+    "content/styles/detection.css",
+    "content/styles/field-ai.css",
+    "content/styles/overrides.css",
+    "content/styles/job-search.css"
+  ],
+  "optionsJs": [
+    "lib/fields.js",
+    "lib/storage.js",
+    "lib/extract.js",
+    "options/state.js",
+    "options/completeness.js",
+    "options/ai-settings.js",
+    "options/form-fields.js",
+    "options/attachments.js",
+    "options/profile-form.js",
+    "options/profile-edit.js",
+    "options/feedback.js",
+    "options/profile-save.js",
+    "options/resume-import.js",
+    "options/options.js"
+  ],
+  "optionsCss": [
+    "options/styles/shell.css",
+    "options/styles/editor.css"
+  ],
+  "popupJs": [
+    "lib/modules.js",
+    "lib/fields.js",
+    "lib/storage.js",
+    "popup/popup.js"
+  ],
+  "popupCss": [
+    "popup/popup.css"
+  ],
+  "backgroundJs": [
+    "lib/ai/provider.js",
+    "lib/ai/job-tasks.js",
+    "lib/ai/models.js",
+    "lib/ai.js"
+  ]
+}

@@ -1,0 +1,46 @@
+/* Product-theme and responsive overrides; intentionally loaded after base rules. */
+/* Ordered by config/modules.json; keep cascade order stable. */
+/* v1.18 deliberate product UI refresh: workbench, not generic AI gloss */
+#autoapply-panel,
+#aa-detect-toast,
+#aa-field-ai,
+#aa-field-ai-note,
+#aa-lasso-overlay,
+#aa-lasso-hint,
+#aa-lasso-rect {
+  --aa-ink: oklch(0.22 0.025 250);
+  --aa-muted: oklch(0.48 0.025 250);
+  --aa-line: oklch(0.88 0.018 250);
+  --aa-field: oklch(0.985 0.006 250);
+  --aa-panel: oklch(1 0 0);
+  --aa-accent: oklch(0.50 0.14 245);
+  --aa-accent-ink: #fff;
+  --aa-focus: oklch(0.62 0.16 245);
+  --aa-radius: 10px;
+}
+/* Scoped to AutoApply's own injected UI only, so host-page controls are never restyled. */
+#autoapply-panel button, #autoapply-panel select, #autoapply-panel input, #autoapply-panel textarea { min-height: 44px; }
+#autoapply-panel button:focus-visible, #autoapply-panel select:focus-visible, #autoapply-panel input:focus-visible, #autoapply-panel textarea:focus-visible, #autoapply-panel [tabindex]:focus-visible,
+#aa-detect-toast button:focus-visible, #aa-field-ai:focus-visible { outline: 3px solid var(--aa-focus) !important; outline-offset: 2px !important; }
+/* Removed dead .primary / .secondary / .btn--primary / .btn--ghost / .btn--add rules:
+   the injected panel styles its own controls with aa- prefixed classes (aa-btn-primary,
+   aa-btn-ghost, etc.), so no generic class names remain in the host-injected stylesheet. */
+.autoapply-filled { outline-color: oklch(0.62 0.16 245) !important; background-color: oklch(0.94 0.04 245 / .65) !important; }
+#autoapply-panel { z-index: 500 !important; border-radius: 14px !important; border-color: var(--aa-line) !important; box-shadow: 0 18px 50px rgba(20, 31, 54, .16) !important; color: var(--aa-ink) !important; }
+#autoapply-panel .aa-head { background: oklch(0.24 0.035 250) !important; border-radius: 14px 14px 0 0 !important; }
+#autoapply-panel .aa-score-num { font-variant-numeric: tabular-nums !important; }
+#autoapply-panel .aa-score-label { text-transform: none !important; letter-spacing: 0 !important; }
+
+/* Removed .profile-group / .field-grid / .repeater-card / .validation-box rules:
+   these belong to the options page (defined in options/options.css) and must not
+   be injected into host pages via content.css, where they leaked onto arbitrary sites. */
+#aa-detect-toast .aa-detect-toast__actions { display:flex !important; gap:8px !important; }
+#aa-detect-toast .aa-detect-toast__btn--ghost { background:#fff !important; color:var(--aa-ink) !important; border:1px solid var(--aa-line) !important; }
+
+/* v1.22 detection toast must be visible in the viewport */
+#aa-detect-toast { position: fixed !important; top: 18px !important; right: 18px !important; left: auto !important; bottom: auto !important; width: min(360px, calc(100vw - 28px)) !important; max-height: calc(100vh - 36px) !important; overflow: auto !important; z-index: 600 !important; transform: none !important; background: #fff !important; border: 1px solid var(--aa-line) !important; border-radius: 14px !important; box-shadow: 0 18px 50px rgba(20,31,54,.18) !important; }
+#aa-detect-toast .aa-detect-toast__btn { min-height: 40px !important; }
+@media (max-width: 480px) { #aa-detect-toast { top: 10px !important; right: 10px !important; left: 10px !important; width: auto !important; } }
+
+#aa-btn-analyze, #autoapply-panel .aa-btn-analyze { margin-top: 8px !important; background: #fff !important; color: var(--aa-ink) !important; border: 1px solid var(--aa-line) !important; }
+#autoapply-panel .aa-btn-fix + .aa-btn-analyze { margin-top: 8px !important; }

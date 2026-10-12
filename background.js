@@ -1,5 +1,5 @@
 // AutoApply background service worker.
-importScripts("lib/ai.js");
+importScripts("lib/ai/provider.js", "lib/ai/job-tasks.js", "lib/ai/models.js", "lib/ai.js");
 
 const STORAGE_KEY = "autoapplyData";
 

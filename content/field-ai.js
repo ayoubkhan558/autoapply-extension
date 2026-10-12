@@ -3,19 +3,8 @@
 // ---- Per-field AI fill button ---------------------------------------
 // One floating button tracks the hovered/focused field (not one DOM node per input).
 function aaIsAiField(el) {
-  if (!el || aaIsHidden(el)) return false;
-  const tag = el.tagName;
-  if (tag === "SELECT") return !el.disabled && !el.readOnly;
-  if (tag === "TEXTAREA") return isFillable(el);
-  if (el.isContentEditable) return true;
-  if (tag !== "INPUT") return false;
-  const t = (el.type || "text").toLowerCase();
-  // Include invalid Bubble type="input" and other text-like types.
-  if (["hidden", "submit", "button", "file", "password", "reset", "image", "checkbox", "radio", "range", "color"].indexOf(t) !== -1) return false;
-  if (!isFillable(el)) return false;
-  const sig = { text: getLabelText(el), attr: getAttrText(el) };
-  if (isSearchField(el, sig)) return false;
-  return true;
+  return !!el && !/^(checkbox|radio|file)$/.test(el.type || "") &&
+    (el.matches("input,textarea,select") || el.isContentEditable) && aaIsEligible(el);
 }
 
 var aaAiBtn = null;
@@ -76,7 +65,7 @@ function aaAiNote(text, kind) {
 }
 
 async function aaFillSingleField(field) {
-  if (!field) return;
+  if (!aaIsAiField(field)) return;
   const sig = { text: getLabelText(field), attr: getAttrText(field) };
   const question = (questionText(field) || displayLabel(sig, field) || "this field");
   // 1) Try the local profile first (instant, no API call).
@@ -85,7 +74,7 @@ async function aaFillSingleField(field) {
   if (ctx) {
     const best = resolveValue(sig, ctx.flat, ctx.customFields);
     if (best && best.score >= 0.8 && best.value !== undefined && best.value !== null && String(best.value) !== "") {
-      if (applyTextValue(field, String(best.value), best.score)) { aaAiNote("Filled from your profile"); return; }
+      if (aaWithSubmitGuard(function () { return applyTextValue(field, String(best.value), best.score); })) { aaAiNote("Filled from your profile"); return; }
     }
   }
   // 2) Fall back to the AI provider for open-ended fields.
@@ -107,10 +96,7 @@ async function aaFillSingleField(field) {
     if (!resp || !resp.ok) { aaAiNote((resp && resp.error) || "AI could not answer.", "error"); return; }
     const ans = resp.data && resp.data.answers && resp.data.answers[0];
     if (!ans) { aaAiNote("AI returned no answer.", "error"); return; }
-    if (!applyTextValue(field, String(ans), 0.9)) {
-      setNativeValue(field, String(ans));
-      fireEvents(field);
-    }
+    if (!aaIsAiField(field) || !aaWithSubmitGuard(function () { return applyTextValue(field, String(ans), 0.9); })) return;
     field.classList.add(HL_CLASS);
     setTimeout(function () { field.classList.remove(HL_CLASS); }, 2500);
     aaAiNote("Filled with AI \u2014 review before submitting");

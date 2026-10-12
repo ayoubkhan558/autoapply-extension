@@ -1,0 +1,165 @@
+/* Settings shell, controls, navigation, and buttons. */
+/* Ordered by config/modules.json; keep cascade order stable. */
+/* AutoApply settings — Apple-light theme (DESIGN.md).
+   All styles are scoped under .aa-ext-options (the settings <body>); no global
+   element or :root selectors, so this stylesheet only affects this document.
+   System: Frost canvas, Carbon ink, hairline #d2d2d7 borders, pill buttons,
+   #0071e3 reserved for filled actions and selected states. No shadows except
+   the toast, no gradients. */
+
+.aa-ext-options, .aa-ext-options * { box-sizing: border-box; }
+
+.aa-ext-options {
+  --aa-blue: #0071e3;
+  --aa-blue-hover: #0077ed;
+  --aa-link: #0066cc;
+  --aa-ink: #1d1d1f;
+  --aa-muted: #515154;
+  --aa-line: #d2d2d7;
+  --aa-canvas: #f5f5f7;
+  --aa-surface: #ffffff;
+  --aa-pebble: #e2e2e5;
+  --aa-success: #1d7f37;
+  --aa-error: #d70015;
+  --aa-radius: 8px;
+  --aa-pill: 980px;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Inter, sans-serif;
+  font-size: 14px;
+  letter-spacing: -0.016em;
+  line-height: 1.47;
+  color: var(--aa-ink);
+  background: var(--aa-canvas);
+}
+
+/* Accessibility baseline: comfortable targets + a visible focus ring. */
+.aa-ext-options button, .aa-ext-options select, .aa-ext-options input, .aa-ext-options textarea { min-height: 44px; }
+.aa-ext-options button:focus-visible, .aa-ext-options select:focus-visible,
+.aa-ext-options input:focus-visible, .aa-ext-options textarea:focus-visible,
+.aa-ext-options [tabindex]:focus-visible { outline: 2px solid var(--aa-blue); outline-offset: 2px; }
+
+/* ---- App shell: sidebar + main ---- */
+.aa-ext-options .aa-layout { display: flex; min-height: 100vh; align-items: stretch; }
+
+.aa-ext-options .aa-sidebar {
+  flex: 0 0 248px; position: sticky; top: 0; align-self: flex-start;
+  height: 100vh; padding: 24px 16px; display: flex; flex-direction: column;
+  background: var(--aa-surface); color: var(--aa-ink);
+  border-right: 1px solid var(--aa-line);
+}
+.aa-ext-options .aa-sidebar__brand { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+.aa-ext-options .aa-sidebar__logo { width: 36px; height: 36px; border-radius: 8px; }
+.aa-ext-options .aa-sidebar__title { font-weight: 600; font-size: 15px; color: var(--aa-ink); }
+.aa-ext-options .aa-sidebar__subtitle { font-size: 12px; letter-spacing: -0.01em; color: var(--aa-muted); }
+.aa-ext-options .aa-sidebar__nav { display: flex; flex-direction: column; gap: 4px; }
+.aa-ext-options .aa-sidebar__note { margin-top: auto; font-size: 11px; color: var(--aa-muted); line-height: 1.5; }
+
+.aa-ext-options .aa-nav-item {
+  display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
+  padding: 10px 14px; border: none; border-radius: var(--aa-pill); background: transparent;
+  color: var(--aa-ink); font-family: inherit; font-size: 14px; letter-spacing: -0.016em;
+  font-weight: 400; cursor: pointer;
+}
+.aa-ext-options .aa-nav-item:hover { background: #e8e8ed; color: var(--aa-ink); }
+.aa-ext-options .aa-nav-item:active { background: #dcdce1; color: var(--aa-ink); }
+.aa-ext-options .aa-nav-item--active,
+.aa-ext-options .aa-nav-item--active:hover { background: var(--aa-blue); color: #fff; font-weight: 600; }
+.aa-ext-options .aa-nav-item__icon { width: 18px; height: 18px; flex: none; }
+
+.aa-ext-options .aa-main { flex: 1 1 auto; min-width: 0; padding: 32px clamp(20px, 3vw, 48px) 96px; }
+.aa-ext-options .aa-main__head { margin-bottom: 24px; }
+.aa-ext-options .aa-main__title { font-size: 28px; font-weight: 600; letter-spacing: 0.007em; line-height: 1.18; margin: 0; }
+
+/* ---- Tab panels ---- */
+.aa-ext-options .aa-tab-panel { display: none; }
+.aa-ext-options .aa-tab-panel--active { display: block; }
+
+/* ---- Generic helpers ---- */
+.aa-ext-options .aa-muted { color: var(--aa-muted); font-size: 13px; margin-top: 0; }
+.aa-ext-options .aa-muted--small { font-size: 12px; margin: 8px 0 0; }
+.aa-ext-options .aa-hidden { display: none; }
+.aa-ext-options .aa-status { font-size: 13px; color: var(--aa-muted); }
+.aa-ext-options .aa-status.aa-success { color: var(--aa-success); font-weight: 600; }
+.aa-ext-options .aa-status.aa-error { color: var(--aa-error); font-weight: 600; }
+.aa-ext-options code { background: var(--aa-pebble); color: var(--aa-ink); border-radius: 4px; padding: 1px 5px; font-size: 12px; }
+
+/* ---- Buttons: filled pill (primary), outlined pill (everything else) ---- */
+.aa-ext-options .aa-btn {
+  font-family: inherit; cursor: pointer; border-radius: var(--aa-pill);
+  font-size: 14px; letter-spacing: -0.016em;
+}
+.aa-ext-options .aa-btn--primary {
+  line-height: 1.2;
+  background: var(--aa-blue); color: #fff; border: none;
+  padding: 11px 24px; font-weight: 400; font-size: 15px;
+}
+.aa-ext-options .aa-btn--primary:hover { background: var(--aa-blue-hover); }
+.aa-ext-options .aa-btn--ghost,
+.aa-ext-options .aa-btn--add {
+  background: transparent; border: 1px solid var(--aa-link); color: var(--aa-link);
+  padding: 8px 16px;
+}
+.aa-ext-options .aa-btn--ghost:hover,
+.aa-ext-options .aa-btn--add:hover { background: rgba(0, 102, 204, 0.1); color: var(--aa-link); }
+.aa-ext-options .aa-btn--ghost:active,
+.aa-ext-options .aa-btn--add:active { background: rgba(0, 102, 204, 0.16); }
+.aa-ext-options .aa-btn--file { display: inline-flex; align-items: center; }
+.aa-ext-options .aa-btn--remove {
+  background: transparent; border: 1px solid var(--aa-line); color: var(--aa-error);
+  padding: 8px 16px;
+}
+.aa-ext-options .aa-btn--remove:hover { background: rgba(215, 0, 21, 0.05); border-color: rgba(215, 0, 21, 0.4); }
+
+/* ---- Toolbar ---- */
+.aa-ext-options .aa-toolbar {
+  display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; justify-content: space-between;
+  margin: 0 0 20px; padding: 16px 20px;
+  border: 1px solid var(--aa-line); border-radius: var(--aa-radius); background: var(--aa-surface);
+}
+.aa-ext-options .aa-toolbar__main {
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;
+  flex: 1 1 280px; min-width: 0;
+}
+.aa-ext-options .aa-toolbar__aside {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  flex: 0 1 auto;
+}
+.aa-ext-options .aa-toolbar__field {
+  display: flex; flex-direction: column; gap: 4px;
+  flex: 1 1 180px; min-width: 140px; max-width: 320px;
+}
+.aa-ext-options .aa-toolbar__field-label {
+  font-size: 12px; font-weight: 600; letter-spacing: -0.01em; color: var(--aa-muted);
+}
+.aa-ext-options .aa-toolbar__group { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.aa-ext-options .aa-toolbar__danger { margin-left: auto; }
+.aa-ext-options .aa-toolbar__select {
+  width: 100%; min-width: 0;
+  padding: 8px 12px; border: 1px solid var(--aa-line); border-radius: var(--aa-radius);
+  background: var(--aa-surface); color: var(--aa-ink); font-family: inherit; font-size: 14px;
+}
+.aa-ext-options .aa-toolbar__aside .aa-toolbar__group {
+  padding-right: 8px; border-right: 1px solid var(--aa-line);
+}
+.aa-ext-options #toggleRaw[aria-pressed="true"] {
+  background: rgba(0, 102, 204, 0.1); border-color: var(--aa-link);
+}
+.aa-ext-options .aa-profile-import-note { margin: 0 0 16px; }
+.aa-ext-options .aa-profile-import-note.aa-hidden { display: none; margin: 0; }
+
+.aa-ext-options .aa-profile-cv .aa-upload-section {
+  margin-bottom: 28px; padding-bottom: 28px; border-bottom: 1px solid var(--aa-line);
+}
+.aa-ext-options .aa-profile-cv .aa-upload-section:last-of-type {
+  border-bottom: none; margin-bottom: 16px; padding-bottom: 0;
+}
+.aa-ext-options .aa-upload-section__title {
+  font-weight: 600; font-size: 15px; color: var(--aa-ink); margin: 0 0 6px;
+}
+.aa-ext-options .aa-upload-section__hint { margin: 0 0 14px; }
+.aa-ext-options .aa-upload-section__actions {
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px;
+}
+.aa-ext-options .aa-upload-section__status { margin: 10px 0 0; font-size: 13px; }
+.aa-ext-options .aa-upload-section__status.aa-hidden { display: none; }
+.aa-ext-options .aa-profile-cv__foot { margin: 0; }
