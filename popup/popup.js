@@ -13,10 +13,10 @@ function ensureContentAndSend(tabId, message, onResult) {
   chrome.tabs.sendMessage(tabId, message, function (resp) {
     if (!chrome.runtime.lastError) { onResult(resp, null); return; }
     // allFrames matches the manifest content_scripts (job forms often live in iframes).
-    chrome.scripting.insertCSS({ target: { tabId: tabId, allFrames: true }, files: ["content.css"] }, function () {
+    chrome.scripting.insertCSS({ target: { tabId: tabId, allFrames: true }, files: AutoApplyModules.css }, function () {
       void chrome.runtime.lastError;
       chrome.scripting.executeScript(
-        { target: { tabId: tabId, allFrames: true }, files: ["lib/fields.js", "lib/matcher.js", "lib/storage.js", "content/dom.js", "content/fill.js", "content/panel.js", "content/detect.js", "content/field-ai.js", "content/job-search.js", "content.js"] },
+        { target: { tabId: tabId, allFrames: true }, files: AutoApplyModules.js },
         function () {
           if (chrome.runtime.lastError) { onResult(null, chrome.runtime.lastError.message); return; }
           chrome.tabs.sendMessage(tabId, message, function (resp2) {

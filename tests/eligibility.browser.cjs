@@ -1,11 +1,11 @@
 // Run from the extension root: node tests/eligibility.browser.cjs
 // Uses installed Playwright + Chromium, no live sites or user data.
-const {chromium} = require('playwright');
+const {chromium, launchOptions} = require('./browser.cjs');
 const path = require('path');
 const assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '..');
 (async () => {
- const browser = await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH || '/usr/local/bin/chromium',args:['--no-sandbox']});
+ const browser = await chromium.launch(launchOptions());
  const page = await browser.newPage();
  const errors = []; page.on('pageerror',e=>errors.push(e.message));
  let passed=0;
@@ -13,7 +13,7 @@ const root = path.resolve(__dirname, '..');
   await page.goto('about:blank');
   await page.setContent('<style>input,select,textarea,button,[role=combobox],[role=radio]{min-width:100px;min-height:24px}label{display:inline-block}</style>'+html);
   await page.evaluate(()=>{window.chrome={runtime:{sendMessage:(m,cb)=>cb({ok:true,data:{answers:['TEST ANSWER']}})}};});
-  for(const file of ['lib/fields.js','lib/matcher.js','content/dom.js','content/fill.js','content/panel.js','content/detect.js','content/field-ai.js']) await page.addScriptTag({path:path.join(root,file)});
+  for(const file of require('../config/modules.json').contentJs.filter(f => !['lib/storage.js','content.js'].includes(f) && !f.startsWith('content/job-search/'))) await page.addScriptTag({path:path.join(root,file)});
   await page.evaluate(()=>{
    window.ctx={profile:{personal:{firstName:'Ada',lastName:'Lovelace',fullName:'Ada Lovelace',email:'ada@example.test'},experience:[],education:[]},flat:{'personal.firstName':'Ada','personal.lastName':'Lovelace','personal.fullName':'Ada Lovelace','personal.email':'ada@example.test','address.city':'Lahore','address.country':'Pakistan','personal.phone':'03001234567'},customFields:[],skillTokens:['javascript']};
    aaFillContext=async()=>ctx; aaLoadActiveResume=async()=>null;aaLoadActivePhoto=async()=>null;aaLoadActiveCoverLetter=async()=>null;

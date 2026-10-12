@@ -49,8 +49,10 @@ On any form (job application, sign-up, etc.):
 - Right-click the page → **AutoApply: fill this form**, **or**
 - Press **Alt+Shift+F**.
 
-Filled fields flash with a purple outline. The extension **never submits** the form —
-you always review first. Existing non-empty fields are left untouched.
+Filled fields flash with a purple outline. AutoApply fills for review and does not
+intentionally submit forms. Its safe-click checks and submit-event guard cannot
+guarantee against arbitrary site-driven submissions (such as direct `form.submit()`
+or fetch calls). Existing non-empty fields are left untouched.
 
 ### After filling — results panel
 
@@ -97,36 +99,57 @@ Domain entries match subdomains, so `greenhouse.io` also covers `boards.greenhou
 
 ## How matching works
 
-`lib/matcher.js` holds a dictionary mapping each profile key to label/attribute
-synonyms. For every field, the content scripts build a signature from its `<label>`,
+`lib/fields.js` holds the shared field/synonym registry; `lib/matcher.js`
+scores each profile key against field labels and attributes. For every field, the content scripts build a signature from its `<label>`,
 `aria-label`, `placeholder`, `name`, `id`, and `autocomplete`, scores it against the
 dictionary, and fills the best match. Values are set with native setters and
 `input`/`change`/`blur` events are dispatched so **React / Vue** controlled inputs
 register the change.
 
-## File structure
+## File structure and maintenance
 
-```
+Version **1.25.2** uses focused modules with a **300-line code-file cap**.
+
+```text
 autoapply-extension/
-├─ manifest.json
-├─ background.js          # context menu, keyboard command, JSON seeding
-├─ content.js             # boot: message listeners (loads once)
-├─ content/               # page scripts (loaded in order)
-│  ├─ dom.js              # labels, transforms, fill primitives
-│  ├─ fill.js             # planners + main fill run
-│  ├─ panel.js            # analysis / answers / lasso UI
-│  ├─ detect.js           # form detection toast
-│  └─ field-ai.js         # per-field AI button
-├─ content.css            # highlight style
-├─ data/profile.default.json   # JSON backend (default shape)
-├─ lib/
-│  ├─ fields.js           # field registry
-│  ├─ matcher.js          # synonym dictionary + scorer
-│  └─ storage.js          # load/save JSON helpers
-├─ popup/  popup.html · popup.js · popup.css
-├─ options/ options.html · options.js · options.css
-└─ icons/  icon16.png · icon48.png · icon128.png
+├─ config/modules.json       # single source of module dependency order
+├─ manifest.json             # generated content-script/style lists
+├─ background.js             # service-worker commands and AI bridge
+├─ content.js                # content-script startup
+├─ content/
+│  ├─ dom/                   # labels, transforms, setters, matching, controls
+│  ├─ eligibility/           # policy, root scoring, shared eligibility gate
+│  ├─ fill/                  # planners, uploads, widgets, repeaters
+│  ├─ fill.js                # small full-fill coordinator
+│  ├─ ui/                    # panels, questions, attention lists, results, lasso
+│  ├─ job-search/            # queries, modal, startup
+│  ├─ styles/                # ordered injected CSS modules
+│  ├─ safety.js              # safe clicks and submit guard
+│  ├─ detect.js
+│  └─ field-ai.js
+├─ lib/                      # shared registry, storage, matcher, extraction
+│  └─ ai/                    # providers, task prompts, models
+├─ options/                  # focused profile/settings modules and styles
+├─ popup/                    # popup controls and generated module-list consumer
+├─ scripts/                  # synchronization and architecture checks
+├─ tests/                    # browser fixtures and real MV3 smoke tests
+├─ data/profile.default.json
+├─ icons/
+└─ ARCHITECTURE.md            # ownership, module contracts, change workflow
 ```
+
+The committed extension loads directly with **Load unpacked**. For development:
+
+```sh
+npm install
+npx playwright install chromium
+npm run sync   # only needed after changing config/modules.json
+npm test
+```
+
+Set `CHROMIUM_PATH` to use an already installed Chromium binary. `npm run check`
+rejects oversized files, missing or duplicate modules, loader drift, and syntax errors.
+See **ARCHITECTURE.md** for the full maintenance guide.
 
 ## Notes & next steps
 

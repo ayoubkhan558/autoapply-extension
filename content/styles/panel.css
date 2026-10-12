@@ -1,0 +1,200 @@
+/* Injected panel shell and shared UI primitives. */
+/* Ordered by config/modules.json; keep cascade order stable. */
+.autoapply-filled {
+  outline: 2px solid #0071e3 !important;
+  outline-offset: 1px !important;
+  background-color: rgba(79, 70, 229, 0.08) !important;
+  transition: outline 0.2s ease, background-color 0.2s ease;
+}
+
+#autoapply-panel {
+  position: fixed !important;
+  top: 16px !important;
+  right: 16px !important;
+  width: 320px !important;
+  max-height: 82vh !important;
+  overflow-y: auto !important;
+  background: #fff !important;
+  color: #1f2937 !important;
+  z-index: 2147483647 !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 12px !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18) !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+  text-align: left !important;
+}
+
+#autoapply-panel * {
+  box-sizing: border-box !important;
+}
+
+#autoapply-panel .aa-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 8px 14px !important;
+  background: #0071e3 !important;
+  border-radius: 12px 12px 0 0 !important;
+}
+
+#autoapply-panel .aa-head-title {
+  color: #fff !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+}
+
+#autoapply-panel .aa-close {
+  background: transparent !important;
+  border: none !important;
+  color: #fff !important;
+  font-size: 20px !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  padding: 0 4px !important;
+}
+
+#autoapply-panel .aa-body {
+  padding: 14px !important;
+}
+
+#autoapply-panel .aa-effort {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 10px !important;
+  background: #f9fafb !important;
+  border: 1px solid #eef2f7 !important;
+  border-radius: 10px !important;
+  margin-bottom: 12px !important;
+}
+
+#autoapply-panel .aa-effort-dot {
+  font-size: 18px !important;
+}
+
+#autoapply-panel .aa-effort-label {
+  font-weight: 600 !important;
+}
+
+#autoapply-panel .aa-effort-sub {
+  font-size: 11px !important;
+  color: #6b7280 !important;
+}
+
+#autoapply-panel .aa-loading {
+  color: #6b7280 !important;
+  padding: 8px 0 !important;
+}
+
+#autoapply-panel .aa-error {
+  color: #dc2626 !important;
+  padding: 8px 0 !important;
+}
+
+#autoapply-panel .aa-score {
+  text-align: center !important;
+  margin-top: 4px !important;
+}
+
+#autoapply-panel .aa-score-num {
+  font-size: 34px !important;
+  font-weight: 800 !important;
+}
+
+#autoapply-panel .aa-score-label {
+  font-size: 11px !important;
+  color: #6b7280 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+}
+
+#autoapply-panel .aa-bar {
+  height: 8px !important;
+  background: #eef2f7 !important;
+  border-radius: 6px !important;
+  overflow: hidden !important;
+  margin: 10px 0 14px !important;
+}
+
+#autoapply-panel .aa-bar-fill {
+  height: 100% !important;
+  border-radius: 6px !important;
+}
+
+#autoapply-panel .aa-summary {
+  margin-bottom: 12px !important;
+}
+
+#autoapply-panel .aa-section-title {
+  font-weight: 700 !important;
+  margin: 12px 0 6px !important;
+  font-size: 12px !important;
+}
+
+#autoapply-panel .aa-list {
+  margin: 0 0 6px !important;
+  padding-left: 18px !important;
+}
+
+#autoapply-panel .aa-list li {
+  margin-bottom: 4px !important;
+}
+
+#autoapply-panel .aa-salary {
+  background: #f0fdf4 !important;
+  border: 1px solid #bbf7d0 !important;
+  border-radius: 10px !important;
+  padding: 10px !important;
+}
+
+#autoapply-panel .aa-salary-est {
+  font-weight: 700 !important;
+}
+
+#autoapply-panel .aa-salary-meta {
+  font-size: 11px !important;
+  color: #4b5563 !important;
+  margin-top: 4px !important;
+}
+
+#autoapply-panel .aa-foot {
+  font-size: 10px !important;
+  color: #9ca3af !important;
+  margin-top: 12px !important;
+}
+
+#autoapply-panel .aa-loading {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  color: #6b7280 !important;
+  padding: 14px 0 !important;
+}
+
+#autoapply-panel .aa-loading-msg {
+  font-size: 13px !important;
+}
+
+#autoapply-panel .aa-spinner {
+  width: 18px !important;
+  height: 18px !important;
+  border: 3px solid #e5e7eb !important;
+  border-top-color: #0071e3 !important;
+  border-radius: 50% !important;
+  animation: aaspin 0.8s linear infinite !important;
+  flex: 0 0 auto !important;
+}
+
+@keyframes aaspin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.aa-conf-high {
+  outline: 2px solid #10b981 !important;
+  outline-offset: 1px !important;
+  background-color: rgba(16, 185, 129, 0.08) !important;
+}

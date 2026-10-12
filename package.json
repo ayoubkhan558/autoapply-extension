@@ -1,0 +1,18 @@
+{
+  "name": "autoapply-extension",
+  "version": "1.25.2",
+  "private": true,
+  "description": "Unbundled Manifest V3 form autofiller with small responsibility-based modules",
+  "scripts": {
+    "sync": "node scripts/sync-modules.cjs",
+    "check": "node scripts/check-architecture.cjs",
+    "test:unit": "node test_fixes.js && node test_job_search_query.js",
+    "test:browser": "node tests/eligibility.browser.cjs && node tests/entrypoints.browser.cjs",
+    "test": "npm run check && npm run test:unit && npm run test:browser"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0",
+    "postcss": "8.5.10"
+  },
+  "engines": { "node": ">=20" }
+}

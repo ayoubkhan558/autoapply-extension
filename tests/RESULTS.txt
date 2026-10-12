@@ -1,3 +1,37 @@
+
+> autoapply-extension@1.25.2 test
+> npm run check && npm run test:unit && npm run test:browser
+
+
+> autoapply-extension@1.25.2 check
+> node scripts/check-architecture.cjs
+
+Module entry points are synchronized.
+Architecture checks passed. Largest code file: lib/fields.js (262/300 lines).
+
+> autoapply-extension@1.25.2 test:unit
+> node test_fixes.js && node test_job_search_query.js
+
+test_fixes.js: all checks passed
+ok
+("WordPress Developer" OR "Frontend Developer" OR "Front-end Developer" OR "React Developer" OR "ReactJS" OR "Elementor" OR "WooCommerce" OR "Gutenberg")
+("junior" OR "entry level" OR "graduate" OR "fresh graduate" OR "mid")
+("Pakistan" OR "Lahore" OR "Karachi" OR "Islamabad" OR "Rawalpindi" OR "Faisalabad" OR "Hybrid" OR "Remote")
+(site:linkedin.com/jobs OR site:pk.indeed.com OR site:rozee.pk OR site:mustakbil.com/jobs OR site:brightspyre.com/jobs OR site:careerokay.com OR site:bayrozgar.com OR site:jobz.pk OR site:pakistanjobs.pk OR site:careerjet.com.pk OR site:techjuice.pk/jobs OR site:glassdoor.com/Job/pakistan)
+after:2026-07-17
+-senior
+-staff
+-principal
+-lead
+-manager
+-director
+-head
+-intern
+-contract
+
+> autoapply-extension@1.25.2 test:browser
+> node tests/eligibility.browser.cjs && node tests/entrypoints.browser.cjs
+
 PASS whole-token search matching; apostrophes; Bootstrap
 PASS isolates search, newsletter, login, payment from application
 PASS ancestor search/filter class does not contaminate application
@@ -21,3 +55,8 @@ PASS custom dropdown in filter widget never opened
 PASS ARIA radios respect lasso scope
 PASS native radio groups still fill
 22 browser regression tests passed
+PASS real MV3 service-worker module loading
+PASS options initialization, profile save, tabs, and split stylesheets
+PASS popup initialization and generated fallback module lists
+PASS real content-script injection, full fill, and result panel
+4 entry-point smoke tests passed
