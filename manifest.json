@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "AutoApply — Form Autofiller",
-  "version": "1.25.0",
+  "name": "AutoApply \u2014 Form Autofiller",
+  "version": "1.25.1",
   "description": "Autofill forms and job applications from a local JSON profile.",
   "permissions": [
     "storage",

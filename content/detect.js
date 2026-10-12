@@ -26,17 +26,7 @@ function aaDetectionAllowed(settings) {
   const block = aaHostList(d.blocklist);
   return aaHostAllowed(location.hostname, aaHostList(d.allowlist), block.length ? block : aaHostList(AA_DEFAULT_BLOCKED_SITES));
 }
-function aaCountFillable() {
-  let count = 0;
-  collectControls().forEach(function (el) {
-    if (!isFillable(el)) return;
-    if (aaIsHidden(el)) return;
-    const sig = { text: getLabelText(el), attr: getAttrText(el) };
-    if (isSearchField(el, sig)) return;
-    count++;
-  });
-  return count;
-}
+function aaCountFillable() { return aaEligibleControls().controls.length; }
 // Built-in phrases/roles come from lib/storage.js
 // (AA_DEFAULT_JOB_KEYWORDS, AA_DEFAULT_JOB_ROLES).
 function aaSplitDetectList(raw) {

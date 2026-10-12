@@ -276,6 +276,7 @@ async function runGenerateApplication() {
 }
 
 function aaIsQuestionField(el) {
+  if (!aaIsEligible(el)) return false;
   const tag = el.tagName;
   if (tag === "TEXTAREA") return true;
   if (tag !== "INPUT") return false;
@@ -287,12 +288,12 @@ function aaIsQuestionField(el) {
 }
 
 function aaCollectQuestions() {
-  const els = document.querySelectorAll("textarea, input");
+  const els = aaEligibleControls().controls;
   const out = [];
   els.forEach(function (el) {
     if (el.disabled || el.readOnly) return;
-    if (el.offsetParent === null && (el.type || "").toLowerCase() !== "hidden") return;
-    if ((el.value || "").trim()) return;
+
+    if ((el.isContentEditable ? el.textContent : (el.value || "")).trim()) return;
     if (!aaIsQuestionField(el)) return;
     const q = (getLabelText(el) || el.placeholder || el.name || "").replace(/\s+/g, " ").trim();
     if (!q) return;
@@ -325,8 +326,7 @@ async function runAnswerQuestions() {
     fields.forEach(function (f, i) {
       const ans = answers[i];
       if (!ans) return;
-      setNativeValue(f.el, String(ans));
-      fireEvents(f.el);
+      if (!aaWithSubmitGuard(function () { return applyTextValue(f.el, String(ans), 0.9); })) return;
       f.el.classList.add(HL_CLASS);
       filled++;
     });
@@ -345,7 +345,7 @@ function aaRequiredHint(el) {
 // empty text inputs, unselected dropdowns (native + custom widgets),
 // unanswered required radio groups, and required checkboxes.
 function aaUnfilledFields(controls, includeCustom) {
-  const list = controls || collectControls();
+  const list = aaEligibleControls(controls ? {controls:controls} : {}).controls;
   const seen = {};
   const out = [];
   const radioGroups = {};
@@ -363,7 +363,7 @@ function aaUnfilledFields(controls, includeCustom) {
   }
   list.forEach(function (el) {
     if (el.disabled || el.readOnly) return;
-    if (el.offsetParent === null) return;
+
     if (el.classList && el.classList.contains(HL_CLASS)) return;
     const tag = el.tagName;
     const t = (el.type || "").toLowerCase();
@@ -386,7 +386,7 @@ function aaUnfilledFields(controls, includeCustom) {
       if (empty) add(sig.text || sig.attr, aaRequiredHint(el));
       return;
     }
-    if ((el.value || "").trim()) return;
+    if ((el.isContentEditable ? el.textContent : (el.value || "")).trim()) return;
     add(sig.text || sig.attr, aaRequiredHint(el));
   });
   Object.keys(radioGroups).forEach(function (key) {
@@ -400,7 +400,7 @@ function aaUnfilledFields(controls, includeCustom) {
     Array.prototype.forEach.call(nodes, function (el) {
       const tg = el.tagName;
       if (tg === "SELECT" || tg === "INPUT" || tg === "TEXTAREA") return;
-      if (el.disabled || aaIsHidden(el)) return;
+      if (!aaIsEligible(el)) return;
       if (el.classList && el.classList.contains(HL_CLASS)) return;
       const sig = { text: customSelectLabel(el), attr: getAttrText(el) };
       if (isSearchField(el, sig)) return;
@@ -491,18 +491,11 @@ function startLasso() {
   });
 }
 
-async function fillWithinBox(box) {
+function fillWithinBox(box) { return aaWithSubmitGuard(function () { return aaFillWithinBox(box); }); }
+async function aaFillWithinBox(box) {
   const ctx = await aaFillContext();
   if (!ctx) { aaShowFillResult(0, []); return; }
-  const selected = collectControls().filter(function (el) {
-    const t = (el.type || "").toLowerCase();
-    if (["hidden", "submit", "button", "reset", "image"].indexOf(t) !== -1) return false;
-    if (el.disabled) return false;
-    let r;
-    try { r = el.getBoundingClientRect(); } catch (e) { return false; }
-    if (r.width === 0 && r.height === 0) return false;
-    return !(r.right < box.left || r.left > box.right || r.bottom < box.top || r.top > box.bottom);
-  });
+  const selected = aaEligibleControls({box:box}).controls;
   let filled = 0;
   // Track the exact elements we successfully filled so the "still needs
   // attention" list can report every OTHER selected field accurately,
@@ -516,7 +509,7 @@ async function fillWithinBox(box) {
   // Report empty fields across the WHOLE form (not just the boxed selection),
   // so a partially-completed form is never shown as "ready to submit". The
   // fields we just filled carry the highlight class and are skipped.
-  aaShowFillResult(filled, aaUnfilledFields(collectControls(), true));
+  aaShowFillResult(filled, aaUnfilledFields(null, true));
 }
 
 // Within a lasso selection, list every chosen field we could NOT fill and
@@ -524,6 +517,7 @@ async function fillWithinBox(box) {
 // selected elements, uses the actually-filled set (not the fading highlight),
 // and never silently drops a field just because its label is blank.
 function aaSelectedUnfilled(selected, filledEls, box) {
+  selected = aaEligibleControls({controls:selected,box:box}).controls;
   const seen = {};
   const out = [];
   const radioGroups = {};
@@ -557,7 +551,7 @@ function aaSelectedUnfilled(selected, filledEls, box) {
       if (empty) add(sig.text || sig.attr, aaRequiredHint(el));
       return;
     }
-    if ((el.value || "").trim()) return;
+    if ((el.isContentEditable ? el.textContent : (el.value || "")).trim()) return;
     add(sig.text || sig.attr, aaRequiredHint(el));
   });
   Object.keys(radioGroups).forEach(function (key) {
@@ -573,7 +567,7 @@ function aaSelectedUnfilled(selected, filledEls, box) {
     Array.prototype.forEach.call(widgets, function (el) {
       const tg = el.tagName;
       if (tg === "SELECT" || tg === "INPUT" || tg === "TEXTAREA") return;
-      if (el.disabled || aaIsHidden(el)) return;
+      if (!aaIsEligible(el, {box:box})) return;
       if (filledEls.indexOf(el) !== -1) return;
       let r;
       try { r = el.getBoundingClientRect(); } catch (e2) { return; }

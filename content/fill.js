@@ -51,10 +51,11 @@ function displayLabel(sig, el) {
 }
 
 function planText(controls, flat, customFields) {
+  controls = aaEligibleControls({controls:controls}).controls;
   const out = [];
   controls.forEach(function (el) {
     const t = (el.type || "").toLowerCase();
-    if (t === "radio" || t === "checkbox") return;
+    if (t === "radio" || t === "checkbox" || (!el.matches("input,select,textarea") && !el.isContentEditable)) return;
     if (!isFillable(el) && !el.isContentEditable) return;
     if (el.isContentEditable && (el.innerText || el.textContent || "").trim()) return;
     if (!el.isContentEditable && el.tagName !== "SELECT" && el.value && el.value.trim()) return;
@@ -158,6 +159,7 @@ function pickRadio(group, value, sig) {
 }
 
 function planRadios(controls, flat, customFields) {
+  controls = aaEligibleControls({controls:controls}).controls;
   const out = [];
   const groups = {};
   controls.forEach(function (el) {
@@ -170,7 +172,7 @@ function planRadios(controls, flat, customFields) {
       if (aaIsHidden(rg)) return;
       const radios = [];
       rg.querySelectorAll('[role="radio"]').forEach(function (r) {
-        if (r.getAttribute("aria-disabled") === "true") return;
+        if (r.getAttribute("aria-disabled") === "true" || controls.indexOf(r) === -1) return;
         radios.push(r);
       });
       if (!radios.length) return;
@@ -196,6 +198,7 @@ function planRadios(controls, flat, customFields) {
 }
 
 function planCheckboxes(controls, skillTokens) {
+  controls = aaEligibleControls({controls:controls}).controls;
   const out = [];
   controls.forEach(function (el) {
     if ((el.type || "").toLowerCase() !== "checkbox" || el.disabled || el.checked) return;
@@ -203,10 +206,7 @@ function planCheckboxes(controls, skillTokens) {
     if (!lbl) return;
     if (/newsletter|subscribe|marketing|promotional|mailing list/.test(lbl)) return;
     if (/none of/.test(lbl)) return;
-    if (/\bagree\b|terms|privacy|consent|i have read|gdpr|authori[sz]e|certify|acknowledge|declare/.test(lbl)) {
-      out.push({ kind: "checkbox", el: el, label: "Agree: " + (getLabelText(el) || lbl), value: "check", score: 0.95, editable: false });
-      return;
-    }
+    if (/\bagree\b|terms|privacy|consent|i have read|gdpr|authori[sz]e|certify|acknowledge|declare/.test(lbl)) return; // Human review required.
     const hit = skillTokens.some(function (tk) { return tk.length >= 2 && (lbl === tk || lbl.indexOf(tk) !== -1 || tk.indexOf(lbl) !== -1); });
     if (hit) out.push({ kind: "checkbox", el: el, label: "Skill: " + (getLabelText(el) || lbl), value: "check", score: 0.9, editable: false });
   });
@@ -233,7 +233,7 @@ function aaGformFileWidgets(kind) {
       if (!block || aaIsHidden(block)) return;
       if (block.querySelector("[role=\"listitem\"][data-mime-type], [data-mime-type]")) return;
       const btn = block.querySelector("[aria-label=\"Add file\"], [jsname=\"mWZCyf\"]");
-      if (!btn || aaIsHidden(btn)) return;
+      if (!btn || !aaIsEligible(btn, {actions:true}) || !aaCanSafeClick(btn)) return;
       out.push({ block: block, btn: btn, text: t });
     });
   } catch (e) { /* ignore */ }
@@ -246,11 +246,11 @@ async function applyGformFile(item) {
     markFilled(item.el, item.score);
     return true;
   }
-  try { item.el.click(); } catch (e) { return false; }
+  try { if (!aaIsEligible(item.el, {actions:true}) || !aaSafeClick(item.el)) return false; } catch (e) { return false; }
   await sleep(500);
   let input = block && block.querySelector('input[type="file"]');
   if (!input) {
-    collectControls().forEach(function (el) {
+    aaEligibleControls({allowFiles:true}).controls.forEach(function (el) {
       if (input || (el.type || "").toLowerCase() !== "file" || el.disabled) return;
       const lbl = norm(getLabelText(el) + " " + getAttrText(el));
       if (item.kind === "cover") {
@@ -267,12 +267,12 @@ async function planResume() {
   try { stored = await aaLoadActiveResume(); } catch (e) { stored = null; }
   if (!stored || !stored.dataUrl) return null;
   const inputs = [];
-  collectControls().forEach(function (el) { if ((el.type || "").toLowerCase() === "file" && !el.disabled) inputs.push(el); });
+  aaEligibleControls({allowFiles:true}).controls.forEach(function (el) { if ((el.type || "").toLowerCase() === "file" && !el.disabled) inputs.push(el); });
   for (let i = 0; i < inputs.length; i++) {
     const el = inputs[i];
     const lbl = norm(getLabelText(el) + " " + getAttrText(el));
     if (/cover letter|coverletter|cover note|covernote/.test(lbl) && !/resume|cv|curriculum/.test(lbl)) continue;
-    if (/resume|cv|curriculum/.test(lbl) || inputs.length === 1) {
+    if (/resume|cv|curriculum/.test(lbl)) {
       return { kind: "resume", el: el, label: "Attach CV: " + (stored.name || "resume"), value: (stored.name || "resume"), score: 0.9, editable: false, stored: stored };
     }
   }
@@ -289,7 +289,7 @@ async function planPhoto() {
   let stored = null;
   try { stored = await aaLoadActivePhoto(); } catch (e) { stored = null; }
   if (!stored || !stored.dataUrl) return null;
-  const inputs = collectControls().filter(function (el) { return (el.type || "").toLowerCase() === "file" && !el.disabled; });
+  const inputs = aaEligibleControls({allowFiles:true}).controls.filter(function (el) { return (el.type || "").toLowerCase() === "file" && !el.disabled; });
   for (let i = 0; i < inputs.length; i++) {
     const el = inputs[i];
     const lbl = norm(getLabelText(el) + " " + getAttrText(el));
@@ -307,7 +307,7 @@ async function planCoverLetter() {
   let stored = null;
   try { stored = await aaLoadActiveCoverLetter(); } catch (e) { stored = null; }
   if (!stored || !stored.dataUrl) return null;
-  const inputs = collectControls().filter(function (el) { return (el.type || "").toLowerCase() === "file" && !el.disabled; });
+  const inputs = aaEligibleControls({allowFiles:true}).controls.filter(function (el) { return (el.type || "").toLowerCase() === "file" && !el.disabled; });
   for (let i = 0; i < inputs.length; i++) {
     const el = inputs[i];
     const lbl = norm(getLabelText(el) + " " + getAttrText(el));
@@ -367,7 +367,7 @@ async function fillCustomSelects(ctx, box, filledEls) {
     if (tag === "SELECT" || tag === "INPUT" || tag === "TEXTAREA") return;
     const ariaDisabled = el.getAttribute("aria-disabled");
     if (ariaDisabled === "true") return;
-    if (el.disabled || aaIsHidden(el)) return;
+    if (!aaIsEligible(el, {box:box})) return;
     // When a lasso box is supplied, only consider widgets inside it.
     if (box) {
       let r;
@@ -387,11 +387,18 @@ async function fillCustomSelects(ctx, box, filledEls) {
       const want = norm(transformValue(trg, sig, String(best.value)));
       if (!want) continue;
       if (norm(trg.textContent).indexOf(want) !== -1) continue;
-      trg.click();
+      if (!aaIsEligible(trg, {box:box}) || !aaSafeClick(trg)) continue;
       await sleep(240);
       let optionNodes;
       const mid = aaMenuId(trg);
-      try { optionNodes = document.querySelectorAll((mid ? ("#" + (window.CSS && CSS.escape ? CSS.escape(mid) : mid) + " ") : "") + '[role="option"], [role="option"], li[role="option"], [role="menuitem"], [class*="option"], [class*="SelectOption"], [data-value]'); } catch (e) { optionNodes = []; }
+      const scope = trg.getRootNode();
+      let menu = mid && scope.querySelector("#" + CSS.escape(mid));
+      if (!menu) {
+        const popups = Array.from(scope.querySelectorAll('[role="listbox"],[role="menu"]')).filter(aaReallyVisible);
+        if (popups.length === 1) menu = popups[0];
+      }
+      if (!menu) continue; // Ambiguous popup: leave it for manual review.
+      optionNodes = menu.querySelectorAll('[role="option"],[role="menuitem"],[class*="option"],[class*="SelectOption"],[data-value]');
       let picked = null;
       let exact = null;
       optionNodes.forEach(function (o) {
@@ -420,12 +427,18 @@ async function fillCustomSelects(ctx, box, filledEls) {
         });
       }
       if (picks.length) {
-        for (let pi = 0; pi < picks.length; pi++) { picks[pi].click(); await sleep(90); }
+        let clicked = 0;
+        for (let pi = 0; pi < picks.length; pi++) {
+          if (!aaIsEligible(trg, {box:box})) break;
+          if (aaSafeClick(picks[pi])) clicked++;
+          await sleep(90);
+        }
+        if (!clicked) continue;
         markFilled(trg, best.score);
         filled++;
         if (filledEls) filledEls.push(trg);
       } else {
-        trg.click();
+        aaSafeClick(trg);
         await sleep(60);
       }
     } catch (e) { /* ignore */ }
@@ -439,7 +452,7 @@ async function fillCustomSelects(ctx, box, filledEls) {
 // the newly-revealed empty fields from that record.
 function aaRepeaterEmpties(groupKey) {
   const out = [];
-  collectControls().forEach(function (el) {
+  aaEligibleControls({allowFiles:true}).controls.forEach(function (el) {
     const t = (el.type || "").toLowerCase();
     if (t === "radio" || t === "checkbox" || !isFillable(el)) return;
     if (el.tagName !== "SELECT" && el.value && el.value.trim()) return;
@@ -458,7 +471,7 @@ function aaFindAddButton(re) {
   try { nodes = document.querySelectorAll('button, a, [role="button"], input[type="button"]'); } catch (e) { nodes = []; }
   for (let i = 0; i < nodes.length; i++) {
     const el = nodes[i];
-    if (aaIsHidden(el)) continue;
+    if (!aaIsEligible(el, {actions:true}) || !aaCanSafeClick(el)) continue;
     const t = norm(aaText(el) || el.value || el.getAttribute("aria-label") || "");
     if (t && t.length <= 60 && re.test(t)) return el;
   }
@@ -467,8 +480,8 @@ function aaFindAddButton(re) {
 
 async function fillRepeaterSections(ctx) {
   const groups = [
-    { key: "education", re: /(add|new|\+).{0,20}(education|qualification|academic|degree|school)|educational details/ },
-    { key: "experience", re: /(add|new|\+).{0,20}(experience|employment|position|job|work)|employment details|work history/ }
+    { key: "education", re: /^(?:add|new|\+)\s*(?:another\s+)?(?:education|educational details|qualification|academic record|degree|school)(?:\s+(?:entry|record|details))?$/ },
+    { key: "experience", re: /^(?:add|new|\+)\s*(?:another\s+)?(?:experience|employment|position|job|work experience|work history)(?:\s+(?:entry|record|details))?$/ }
   ];
   let filled = 0;
   for (let g = 0; g < groups.length; g++) {
@@ -482,14 +495,14 @@ async function fillRepeaterSections(ctx) {
     // entry 0 into them; each further entry needs one click of the add
     // button. If no fields exist yet, the whole section is behind the
     // button, so entry 0 needs a click too.
-    const hasFields = collectControls().some(function (el) {
+    const hasFields = aaEligibleControls().controls.some(function (el) {
       const m = AutoApplyMatcher.match({ text: getLabelText(el), attr: getAttrText(el) });
       return m.key && m.score >= 0.6 && m.key.indexOf(grp.key + ".") === 0;
     });
     for (let i = hasFields ? 1 : 0; i < entries.length && i < 10; i++) {
       const btn = aaFindAddButton(grp.re);
       if (!btn) break;
-      try { btn.click(); } catch (e) { break; }
+      try { if (!aaSafeClick(btn)) break; } catch (e) { break; }
       await sleep(700);
       const empties = aaRepeaterEmpties(grp.key);
       if (!empties.length) break;
@@ -508,11 +521,11 @@ async function fillRepeaterSections(ctx) {
   return filled;
 }
 
-async function run() {
+function run() { return aaWithSubmitGuard(aaRunFill); }
+async function aaRunFill() {
   const ctx = await aaFillContext();
   if (!ctx) return { filled: 0, error: "no-profile" };
-  const controls = collectControls();
-  document.querySelectorAll('[contenteditable="true"], .ql-editor[contenteditable="true"], [role="textbox"][contenteditable="true"]').forEach(function (ed) { if (controls.indexOf(ed) === -1) controls.push(ed); });
+  const controls = aaEligibleControls().controls;
   let filled = 0;
   planText(controls, ctx.flat, ctx.customFields).forEach(function (p) {
     if (applyTextValue(p.el, p.value, p.score)) filled++;
@@ -531,7 +544,7 @@ async function run() {
   if (photo) { try { if (await (photo.gform ? applyGformFile(photo) : applyResume(photo))) filled++; } catch (e) { /* ignore */ } }
   const cover = await planCoverLetter();
   if (cover) { try { if (await (cover.gform ? applyGformFile(cover) : applyResume(cover))) filled++; } catch (e) { /* ignore */ } }
-  try { aaShowFillResult(filled, aaUnfilledFields(controls, true)); } catch (e) { /* ignore */ }
+  try { aaShowFillResult(filled, aaUnfilledFields(null, true)); } catch (e) { /* ignore */ }
   if (filled > 0) { try { aaRecordFill(aaTopHost(), filled); } catch (e) { /* ignore */ } }
   return { filled: filled };
 }

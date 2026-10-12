@@ -195,6 +195,7 @@ function transformValue(el, sig, value) {
 
 // ---- Appliers -------------------------------------------------------
 function applyTextValue(el, value, score) {
+  if (!aaIsEligible(el) || (!el.matches("input,select,textarea") && !el.isContentEditable)) return false;
   let ok;
   if (el.tagName === "SELECT") ok = fillSelect(el, value);
   else ok = fillTextLike(el, String(value));
@@ -203,17 +204,19 @@ function applyTextValue(el, value, score) {
 }
 
 function applyCheck(el, score) {
+  if (!aaIsEligible(el)) return false;
   const ok = checkEl(el);
   if (ok) markFilled(el, score);
   return ok;
 }
 
 async function aaSetFileInput(el, stored, score) {
-  if (!el || !stored || !stored.dataUrl) return false;
+  if (!el || !stored || !stored.dataUrl || !aaIsEligible(el, {allowFiles:true})) return false;
   const blob = await (await fetch(stored.dataUrl)).blob();
   const file = new File([blob], stored.name || "resume.pdf", { type: stored.type || blob.type || "application/pdf" });
   const dt = new DataTransfer();
   dt.items.add(file);
+  if (!aaIsEligible(el, {allowFiles:true})) return false;
   el.files = dt.files;
   el.dispatchEvent(new Event("input", { bubbles: true }));
   el.dispatchEvent(new Event("change", { bubbles: true }));
@@ -286,13 +289,14 @@ function nearestLabel(el) {
     if (!container) break;
     let lbl = null;
     try { lbl = container.querySelector("label, legend, .crm-from-label, [class*='label'], [class*='Label']"); } catch (e) { lbl = null; }
-    if (lbl && !lbl.contains(el)) {
+    if (lbl && !lbl.contains(el) && container.querySelectorAll("input,select,textarea").length <= 1 && (!lbl.htmlFor || lbl.htmlFor === el.id)) {
       const t = aaText(lbl);
       if (t && t.length <= 140) return t;
     }
     let sib = node.previousElementSibling;
     while (sib) {
-      if (sib.tagName !== "INPUT" && sib.tagName !== "SELECT" && sib.tagName !== "TEXTAREA") {
+      if (sib.tagName !== "INPUT" && sib.tagName !== "SELECT" && sib.tagName !== "TEXTAREA" &&
+          !sib.querySelector("input,select,textarea") && (!sib.htmlFor || sib.htmlFor === el.id)) {
         const t = aaText(sib);
         if (t && t.length <= 140 && /[a-z]/i.test(t)) return t;
       }
@@ -343,7 +347,7 @@ function getLabelText(el) {
     if (propEl) { const pl = propEl.getAttribute("cx-prop-label"); if (pl) parts.push(pl); }
   } catch (e) { /* ignore */ }
   // Always prefer a nearby visible label (sibling "Phone Number*" in Bubble, Zoho rows, etc.).
-  const near = nearestLabel(el);
+  const near = parts.join("").trim() ? "" : nearestLabel(el);
   if (near) parts.unshift(near);
   return parts.join(" ");
 }
@@ -514,43 +518,8 @@ function fillSelect(el, value) {
 }
 
 function isSearchField(el, sig) {
-  if (!el) return false;
-  const t = (el.type || "").toLowerCase();
-  if (t === "search") return true;
-  const role = (el.getAttribute("role") || "").toLowerCase();
-  if (role === "searchbox" || role === "search") return true;
-
-  // Widget attrs on the field and a few wrappers (typeahead, site search, filters).
-  const bits = [];
-  let node = el;
-  for (let d = 0; d < 4 && node; d++) {
-    if (node.getAttribute) {
-      ["id", "name", "class", "data-testid", "componentkey", "aria-label", "placeholder", "role"].forEach(function (a) {
-        const v = node.getAttribute(a); if (v) bits.push(v);
-      });
-    }
-    node = node.parentElement;
-  }
-  const attrLow = bits.join(" ").toLowerCase();
-  if (/typeahead|searchbox|search-box|search-input|search-field|semanticsearch|site-search|global-search|job-search|filter-input|filter-box|autosuggest|auto-suggest|faceted-search/.test(attrLow)) return true;
-
-  try {
-    if (el.closest('[role="search"], form[role="search"], form.search, .search-form, [class*="searchbox"], [class*="search-bar"], [class*="search-box"], [class*="typeahead"], [data-testid*="search"], [data-testid*="typeahead"], [data-testid*="filter"], [componentkey*="search"], [componentkey*="Search"], [componentkey*="Filter"]')) return true;
-  } catch (e) { /* ignore */ }
-
-  let text = "", attr = "";
-  if (typeof sig === "string") text = sig;
-  else if (sig) { text = sig.text || ""; attr = sig.attr || ""; }
-  const low = (text + " " + attr + " " + attrLow).toLowerCase();
-  if (/search/.test(low) && !/research/.test(low)) return true;
-  if (/\b(filter by|filters?\b|refine results|sort by|clear selection)\b/.test(low)) return true;
-  if (/describe the job you want|search for jobs|find jobs|what job|job keywords|keywords?\s*search/.test(low)) return true;
-
-  // List autocomplete on search widgets only — not address/location pickers.
-  if ((el.getAttribute("aria-autocomplete") || "").toLowerCase() === "list") {
-    if (/typeahead|search|semanticsearch|autosuggest|filter/.test(attrLow)) return true;
-  }
-  return false;
+  // Compatibility alias: never inspect broad ancestor substrings.
+  return !!aaControlSkipReason(el, {allowFiles:true, actions:true});
 }
 
 function isFillable(el) {
@@ -587,18 +556,18 @@ function resolveValue(sig, flat, customFields) {
   return best;
 }
 
-function collectControls() {
+function collectControls(scope, includeWidgets) {
   const acc = [];
   function walk(root) {
     let list;
-    try { list = root.querySelectorAll("input, textarea, select"); } catch (e) { list = []; }
+    try { list = root.querySelectorAll("input, textarea, select" + (includeWidgets ? ", [contenteditable=\"true\"], " + AA_CUSTOM_SELECTOR : "")); } catch (e) { list = []; }
     for (let i = 0; i < list.length; i++) acc.push(list[i]);
     let all;
     try { all = root.querySelectorAll("*"); } catch (e) { all = []; }
     for (let i = 0; i < all.length; i++) { if (all[i].shadowRoot) walk(all[i].shadowRoot); }
   }
-  walk(document);
-  return acc;
+  walk(scope || document);
+  return Array.from(new Set(acc));
 }
 
 function valTokens(v) {
@@ -656,13 +625,13 @@ function setNativeChecked(el, checked) {
 function checkEl(el) {
   // Google Forms and similar widgets use role="radio" divs instead of inputs.
   if (el.getAttribute && el.getAttribute("role") === "radio") {
-    if (el.getAttribute("aria-checked") !== "true") { try { el.click(); } catch (e) { /* ignore */ } }
+    if (el.getAttribute("aria-checked") !== "true") { try { aaSafeClick(el); } catch (e) { /* ignore */ } }
     el.classList.add(HL_CLASS);
     return el.getAttribute("aria-checked") === "true";
   }
   // Prefer a real click: it toggles the control natively and fires the full
   // event sequence (pointer, click, input, change) custom widgets rely on.
-  if (!el.checked) { try { el.click(); } catch (e) { /* ignore */ } }
+  if (!el.checked) { try { aaSafeClick(el); } catch (e) { /* ignore */ } }
   if (!el.checked) {
     setNativeChecked(el, true);
     el.dispatchEvent(new Event("click", { bubbles: true }));
@@ -696,4 +665,150 @@ function optionLabel(el) {
   }
   if (!parts.join("").trim() && el.value && el.value !== "on") parts.push(el.value);
   return parts.join(" ").replace(/\s+/g, " ").trim();
+}
+
+// ---- Shared eligibility policy --------------------------------------
+// All fill surfaces use aaEligibleControls; file/action modes are explicit.
+function aaTokens(str) {
+  return String(str || '').replace(/['\u2019]/g, '').replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+}
+function aaOwnTokens(el) {
+  return aaTokens(['id', 'name', 'class', 'data-testid', 'data-qa', 'data-test', 'role']
+    .map(function (a) { return el.getAttribute(a) || ''; }).join(' '));
+}
+var AA_SEARCHY = ['search','searchbox','searchbar','query','keyword','keywords','filter','filters','facet','facets','refine','sortby'];
+var AA_WIDGET_NEG = AA_SEARCHY.concat(['newsletter','subscribe','subscription','login','signin','checkout','payment','comment','comments','footer']);
+var AA_HONEYPOT = /honeypot|(?:^|[\s_-])(?:hp|trap)(?:$|[\s_-])|leave.?blank|do.?not.?fill|bot.?field|nospam|ohnohoney/i;
+var AA_ROOT_CACHE = new WeakMap();
+var AA_CUSTOM_SELECTOR = '[role="combobox"],[aria-haspopup="listbox"],[aria-haspopup="menu"],[aria-haspopup="true"],[role="radio"]';
+function aaParent(el) { return el.parentElement || (el.getRootNode && el.getRootNode().host) || null; }
+function aaAncestorsSafe(el) {
+  for (var n = el; n; n = aaParent(n)) {
+    if (n.hidden || n.inert || n.getAttribute('aria-hidden') === 'true') return false;
+    var s = getComputedStyle(n);
+    if (s.display === 'none' || s.visibility === 'hidden' || s.visibility === 'collapse' || Number(s.opacity) === 0) return false;
+  }
+  return true;
+}
+function aaReallyVisible(el) {
+  if (!el || !el.isConnected || !aaAncestorsSafe(el)) return false;
+  var r = el.getBoundingClientRect();
+  return r.width >= 2 && r.height >= 2 && r.right >= 0 && r.bottom >= 0 && r.left <= innerWidth + 5000;
+}
+function aaVisibleCheckProxy(el) {
+  if (!/^(radio|checkbox)$/.test(el.type || '')) return false;
+  // Native choices may be transparent, but not inside a hidden/inert subtree.
+  if (!aaAncestorsSafe(aaParent(el) || el)) return false;
+  if (el.hidden || el.inert || el.getAttribute('aria-hidden') === 'true') return false;
+  var labels = el.labels ? Array.from(el.labels) : [];
+  return labels.some(aaReallyVisible);
+}
+function aaControlSkipReason(el, opts) {
+  opts = opts || {};
+  if (el.closest('[id^="aa-"],.aa-panel,.aa-lasso-overlay')) return 'extension-ui';
+  if (el.disabled || el.readOnly || el.getAttribute('aria-disabled') === 'true' || el.getAttribute('aria-readonly') === 'true') return 'disabled/readonly';
+  var t = (el.type || '').toLowerCase(), role = (el.getAttribute('role') || '').toLowerCase();
+  if (['search','password','hidden','submit','reset','image','range','color'].indexOf(t) !== -1) return 'type:' + t;
+  if (t === 'file' && !opts.allowFiles) return 'type:file';
+  if (t === 'button' && !opts.actions && !el.matches(AA_CUSTOM_SELECTOR)) return 'type:button';
+  if (role === 'searchbox' || role === 'search') return 'role:search';
+  if ([el.getAttribute('enterkeyhint'), el.getAttribute('inputmode')].some(function (s) { return (s || '').toLowerCase() === 'search'; })) return 'search-hint';
+  var ac = (el.getAttribute('autocomplete') || '').toLowerCase();
+  if (/(^|\s)(cc-[^\s]*|current-password|new-password|one-time-code)(\s|$)/.test(ac)) return 'sensitive-autocomplete';
+  if (AA_HONEYPOT.test([el.name,el.id,el.getAttribute('class')].join(' '))) return 'honeypot-name';
+  if (!aaReallyVisible(el) && !aaVisibleCheckProxy(el)) return 'invisible';
+  if (aaOwnTokens(el).some(function (k) { return AA_SEARCHY.indexOf(k) !== -1; })) return 'own-token:search/filter';
+  if (/^(q|s|kw|term|terms)$/i.test(el.name || '') || /^(q|s)$/i.test(el.id || '')) return 'short-search-name';
+  var label = String(getLabelText(el) || '').toLowerCase();
+  if (/^\s*(search|find|filter|sort)\b|\bsearch (for|by|jobs|results|keyword)|\bfilter by\b/.test(label)) return 'label:search';
+  if (/\b(newsletter|subscribe|subscription|sign in|log in|name on card|cardholder|credit card|payment|leave a comment|post a comment)\b/.test(label)) return 'label:non-application';
+  // Only contact/identity fields for other people, not e.g. "Are you a manager?".
+  if (/\b(referral|referee|reference|supervisor|manager|spouse|parent|guardian|emergency|recommender|friend|colleague)(?:['’]s)?\b/.test(label)
+      && /\b(name|email|phone|contact|address|number)\b/.test(label)) return 'other-person';
+  return null;
+}
+function aaCountVisible(root) {
+  return collectControls(root).filter(function (c) {
+    return !/^(hidden|submit|button|reset|image|checkbox|radio|password|file)$/.test(c.type || '') && aaReallyVisible(c);
+  }).length;
+}
+function aaNearestRoot(el) {
+  if (el.form) return { node: el.form, isForm: true };
+  for (var n = aaParent(el), d = 0; n && n !== document.body && d < 8; n = aaParent(n), d++) {
+    if (n.tagName === 'FORM') return { node: n, isForm: true };
+    if (/^(HEADER|NAV|FOOTER)$/.test(n.tagName) || /^(banner|navigation|contentinfo|search)$/i.test(n.getAttribute('role') || '')) break;
+    if (aaCountVisible(n) >= 3 || aaOwnTokens(n).some(function (k) { return ['apply','application','candidate','applicant','resume'].indexOf(k) !== -1; })) return { node: n, isForm: false };
+  }
+  return null;
+}
+function aaScoreRoot(root) {
+  if (AA_ROOT_CACHE.has(root)) return AA_ROOT_CACHE.get(root);
+  var score = 0, why = [], own = aaOwnTokens(root);
+  function add(n, reason) { score += n; why.push(reason); }
+  if ((root.getAttribute('role') || '').toLowerCase() === 'search') add(-99, 'role=search');
+  if (root.tagName === 'FORM' && (root.getAttribute('method') || 'get').toLowerCase() === 'get' && /search|find|results|query|\?q=|jobs\b/i.test(root.getAttribute('action') || '')) add(-3, 'GET search action');
+  // Clearly named unrelated widgets are hard exclusions, not offset by file/identity points.
+  own.forEach(function (k) { if (AA_WIDGET_NEG.indexOf(k) !== -1) add(-99, 'token:' + k); });
+  var all = collectControls(root), ctrls = all.filter(function (c) { return !aaControlSkipReason(c, {allowFiles:true}); });
+  var btn = Array.from(root.querySelectorAll('button,[type="submit"],[role="button"]')).filter(aaReallyVisible)
+    .map(function (b) { return (b.textContent || b.value || b.getAttribute('aria-label') || '').trim().toLowerCase(); });
+  var apply = own.some(function (k) { return ['apply','application','candidate','applicant','resume'].indexOf(k) !== -1; });
+  if (btn.some(function (b) { return /^(submit application|apply(?: now| for .+)?|next|continue|send application|save and continue)$/.test(b); })) { add(1, 'apply button'); apply = true; }
+  if (apply) add(1, 'application signal');
+  if (ctrls.length === 1 && !apply) add(-3, 'single-field');
+  if (all.some(function (c) { return c.type === 'password' && aaReallyVisible(c); }) && all.length <= 4) add(-99, 'login-shaped');
+  if (btn.some(function (b) { return /^(search|go|find|subscribe|sign up for.*|join|apply filters?|update results|filter|sign in|log in|pay.*|checkout)$/.test(b); })) add(-99, 'non-application button');
+  var id = ctrls.filter(function (c) { var m = AutoApplyMatcher.match({text:getLabelText(c),attr:getAttrText(c)}); return m.key && /^(personal|address|links)\./.test(m.key) && m.score >= 0.85; }).length;
+  if (id >= 2) add(2, 'identity fields x' + id);
+  if (ctrls.some(function (c) { return c.type === 'file'; })) add(2, 'visible file upload');
+  var res = {score:score,why:why}; AA_ROOT_CACHE.set(root,res); return res;
+}
+function aaOrphanBlocked(el, stopRoot) {
+  for (var n = aaParent(el), d = 0; n && n !== document.body && d < 8; n = aaParent(n), d++) {
+    if (n === stopRoot) break;
+    if (/^(HEADER|NAV|FOOTER)$/.test(n.tagName) || /^(banner|navigation|contentinfo|search)$/i.test(n.getAttribute('role') || '')) return 'site-chrome';
+    if (aaCountVisible(n) > 6) break;
+    if (aaOwnTokens(n).some(function (k) { return AA_WIDGET_NEG.indexOf(k) !== -1; })) return 'widget-token';
+  }
+  return null;
+}
+function aaEligibleControls(opts) {
+  opts = opts || {}; AA_ROOT_CACHE = new WeakMap();
+  var controls = [], skipped = [];
+  var candidates = opts.controls || collectControls(document, true);
+  candidates.forEach(function (el) {
+    var why = aaControlSkipReason(el, opts);
+    var root = !why && aaNearestRoot(el);
+    if (!why && root) { var s = aaScoreRoot(root.node); if (s.score < 0) why = (root.isForm ? 'form:' : 'group:') + s.why.join('+'); }
+    if (!why) why = aaOrphanBlocked(el, root && root.node);
+    // Unscoped rich editors/actions must never become comment/chat targets.
+    if (!why && !root && (el.isContentEditable || opts.actions || el.type === 'file' || el.matches(AA_CUSTOM_SELECTOR))) why = 'unscoped-widget';
+    if (why) { skipped.push({el:el,reason:why}); return; }
+    if (opts.box) { var r=el.getBoundingClientRect(),b=opts.box; if (r.right < b.left || r.left > b.right || r.bottom < b.top || r.top > b.bottom) return; }
+    controls.push(el);
+  });
+  return {controls:controls,skipped:skipped};
+}
+function aaIsEligible(el, opts) { return !!el && aaEligibleControls(Object.assign({}, opts, {controls:[el]})).controls.length === 1; }
+function aaCanSafeClick(el) {
+  if (!el || !aaReallyVisible(el) || el.disabled || el.getAttribute('aria-disabled') === 'true') return false;
+  var tag=el.tagName, type=(el.type || '').toLowerCase();
+  if (type === 'submit' || type === 'image') return false;
+  var ownerButton = el.closest('button');
+  if (ownerButton && (ownerButton.getAttribute('type') || '').toLowerCase() !== 'button') return false;
+  if (el.closest('input[type="submit"],input[type="image"]')) return false;
+  // Refuse default/invalid button types even outside forms (SPA handlers).
+  if (tag === 'BUTTON' && (el.getAttribute('type') || '').toLowerCase() !== 'button') return false;
+  // No links, including javascript: links; click options only on controls.
+  if (el.closest('a[href]')) return false;
+  return true;
+}
+function aaSafeClick(el) { if (!aaCanSafeClick(el)) return false; return aaWithSubmitGuard(function () { el.click(); return true; }); }
+var AA_SUBMIT_GUARDS = 0, AA_SUBMIT_BLOCK = function (e) { e.preventDefault(); e.stopImmediatePropagation(); };
+function aaWithSubmitGuard(fn) {
+  if (AA_SUBMIT_GUARDS++ === 0) document.addEventListener('submit', AA_SUBMIT_BLOCK, true);
+  function done() { setTimeout(function () { if (--AA_SUBMIT_GUARDS === 0) document.removeEventListener('submit', AA_SUBMIT_BLOCK, true); }, 1500); }
+  try { var r=fn(); if (r && typeof r.then === 'function') return Promise.resolve(r).finally(done); done(); return r; }
+  catch (e) { done(); throw e; }
 }
