@@ -5,9 +5,6 @@ function isSalaryField(el, sig) {
   return /salary|compensation|\bctc\b|\bpay\b|wage|remuneration/.test(hay);
 }
 
-// ponytail: fixed PKR/USD; include currency in profile value or set salaryCurrency
-var AA_PKR_USD = 280;
-
 function aaParseSalary(value, profileCurrency) {
   const raw = String(value || "");
   const low = norm(raw);
@@ -33,35 +30,18 @@ function aaSalaryFieldWant(sig, el) {
   return { currency: currency, period: period };
 }
 
-function aaConvertSalary(amount, from, to) {
-  if (!from || !to || from === to) return amount;
-  if (from === "PKR" && to === "USD") return amount / AA_PKR_USD;
-  if (from === "USD" && to === "PKR") return amount * AA_PKR_USD;
-  return amount;
-}
-
-function aaGuessSalaryCurrency(amount, wantCur) {
-  if (!amount || !wantCur) return null;
-  if (wantCur === "USD" && amount >= 50000) return "PKR";
-  if (wantCur === "PKR" && amount > 0 && amount <= 500) return "USD";
-  return null;
-}
-
 function normalizeCurrency(el, sig, value) {
   const meta = aaParseSalary(value, sig && sig.salaryCurrency);
   let n = meta.amount;
   if (n === null) return String(value).replace(/[^0-9.]/g, "") || value;
   const want = aaSalaryFieldWant(sig, el);
-  let cur = meta.currency || aaGuessSalaryCurrency(n, want.currency);
-  if (!meta.period && n >= 500000 && (!cur || cur === "PKR")) {
-    n = n / 12;
-    meta.period = "month";
-  }
+  // Do not guess a currency, pay period, or exchange rate for a job application.
+  if (want.currency && (!meta.currency || want.currency !== meta.currency)) return "";
+  if (want.period && !meta.period) return "";
   if (want.period && meta.period && want.period !== meta.period) {
     if (meta.period === "year" && want.period === "month") n = n / 12;
     else if (meta.period === "month" && want.period === "year") n = n * 12;
   }
-  if (want.currency && cur) n = aaConvertSalary(n, cur, want.currency);
   n = Math.round(n);
   const t = (el.type || "").toLowerCase();
   if (t === "number" || t === "range") return String(n);

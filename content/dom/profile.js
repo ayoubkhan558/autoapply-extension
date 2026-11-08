@@ -35,15 +35,9 @@ function buildFlat(profile) {
   if (!flat["experience.title"] && flat["professional.currentTitle"]) flat["experience.title"] = flat["professional.currentTitle"];
   if (!flat["links.portfolio"] && flat["links.website"]) flat["links.portfolio"] = flat["links.website"];
   if (!flat["links.website"] && flat["links.portfolio"]) flat["links.website"] = flat["links.portfolio"];
-  if (!flat["professional.availableStartDate"]) flat["professional.availableStartDate"] = aaNextMonthFirstDate();
   if (!flat["professional.currentCompany"] && flat["experience.company"]) flat["professional.currentCompany"] = flat["experience.company"];
   if (!flat["professional.currentTitle"] && flat["experience.title"]) flat["professional.currentTitle"] = flat["experience.title"];
   return flat;
-}
-
-function aaNextMonthFirstDate() {
-  const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth() + 1, 1).toISOString().slice(0, 10);
 }
 
 function aaText(el) {

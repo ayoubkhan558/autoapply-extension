@@ -1,172 +1,316 @@
 {
-  "version": 2,
-  "activeProfileId": "default",
+  "activeProfileId": "ayoub-wp-1794144954284",
   "profiles": [
     {
-      "id": "default",
-      "label": "My Profile",
-      "personal": {
-        "firstName": "",
-        "lastName": "",
-        "middleName": "",
-        "preferredName": "",
-        "username": "",
-        "email": "",
-        "alternateEmail": "",
-        "phone": "",
-        "whatsapp": "",
-        "dateOfBirth": "",
-        "gender": "",
-        "nationality": "",
-        "pronouns": "",
-        "maritalStatus": "",
-        "cnic": "",
-        "veteranStatus": "",
-        "disabilityStatus": "",
-        "ethnicity": "",
-        "emergencyContactName": "",
-        "emergencyContactPhone": ""
-      },
       "address": {
-        "address1": "",
-        "address2": "",
-        "currentAddress": "",
-        "permanentAddress": "",
-        "city": "",
-        "state": "",
-        "zip": "",
-        "country": ""
+        "address1": "Village No. 558 GB P/O Mamu Kanjan",
+        "address2": "Tehsil Tandlianwala",
+        "city": "Faisalabad",
+        "country": "Pakistan",
+        "currentAddress": "Village No. 558 GB P/O Mamu Kanjan, Tehsil Tandlianwala, District Faisalabad, Punjab, Pakistan",
+        "permanentAddress": "Village No. 558 GB P/O Mamu Kanjan, Tehsil Tandlianwala, District Faisalabad, Punjab, Pakistan",
+        "state": "Punjab",
+        "zip": "37000"
       },
-      "links": {
-        "linkedin": "",
-        "github": "",
-        "portfolio": "",
-        "website": "",
-        "facebook": "",
-        "twitter": "",
-        "stackoverflow": "",
-        "dribbble": "",
-        "behance": "",
-        "medium": ""
-      },
-      "professional": {
-        "currentTitle": "",
-        "currentCompany": "",
-        "summary": "",
-        "careerObjective": "",
-        "portfolioSummary": "",
-        "experienceYears": "",
-        "totalExperienceMonths": "",
-        "frontendExperienceYears": "",
-        "reactExperienceYears": "",
-        "wordpressExperienceYears": "",
-        "shopifyExperienceYears": "",
-        "skills": "",
-        "preferredTeams": "",
-        "languages": [],
-        "tools": [],
-        "resumeUrl": "",
-        "cvUrl": "",
-        "upworkUrl": "",
-        "employmentStatus": "",
-        "desiredJobType": "",
-        "preferredWorkMode": "",
-        "preferredLocations": "",
-        "remotePreference": "Remote",
-        "availableStartDate": "",
-        "expectedJoiningDate": "",
-        "noticePeriod": "",
-        "currentSalary": "",
-        "lastDrawnSalary": "",
-        "desiredSalary": "",
-        "minimumExpectedSalary": "",
-        "preferredSalaryRange": "",
-        "salaryCurrency": "",
-        "salaryNegotiable": "",
-        "willingToRelocate": "Yes",
-        "openToContract": "",
-        "openToFreelance": "",
-        "managementExperience": "",
-        "achievements": "",
-        "reasonForLeaving": "",
-        "whyJoinCompany": "",
-        "references": "",
-        "availabilityForInterview": "",
-        "timezone": "",
-        "workAuthorization": "",
-        "needsSponsorship": "No",
-        "securityClearance": "",
-        "linkedinHeadline": "",
-        "coverLetter": ""
-      },
-      "experience": [
-        {
-          "company": "",
-          "title": "",
-          "employmentType": "",
-          "location": "",
-          "startDate": "",
-          "endDate": "",
-          "description": ""
-        }
-      ],
+      "awards": [],
+      "certifications": [],
+      "customFields": [],
       "education": [
         {
-          "school": "",
-          "degree": "",
-          "fieldOfStudy": "",
-          "startYear": "",
-          "endYear": "",
-          "location": "",
-          "gpa": ""
+          "coursework": [
+            "Web Development",
+            "Software Engineering",
+            "Data Structures",
+            "DBMS",
+            "Java"
+          ],
+          "degree": "Master of Computer Science (MCS)",
+          "endYear": "2020",
+          "fieldOfStudy": "Computer Science",
+          "gpa": "3.32/4.0",
+          "location": "Sahiwal, Punjab, Pakistan",
+          "school": "University of Sahiwal",
+          "startYear": "2018"
         }
       ],
+      "experience": [
+        {
+          "company": "Xgrid.co",
+          "description": "Translated Figma and Adobe XD designs into responsive applications using Next.js, React.js, WordPress, Bricks Builder, and Webflow. Developed Xgrid’s corporate website using Next.js. Built React, Next.js, TypeScript, and ACF Pro WordPress sites, optimizing Core Web Vitals, page speed, and technical SEO. Collaborated with design and product teams and contributed to technical and end-user documentation.",
+          "employmentType": "Full-time",
+          "endDate": "2026-07",
+          "location": "Islamabad, Pakistan",
+          "startDate": "2024-10",
+          "title": "Frontend Website Developer (WordPress & React)"
+        },
+        {
+          "company": "Epicsols",
+          "description": "Led 4 front-end developers through task assignment, code reviews, and timeline tracking. Delivered WordPress, WooCommerce, and Next.js projects for international clients, translating Figma designs into responsive interfaces. Established reusable CMS components and custom post-type schemas with ACF, CPT, Elementor Pro, and Bricks Builder.",
+          "employmentType": "Full-time",
+          "endDate": "2024-08",
+          "location": "Sahiwal, Pakistan",
+          "startDate": "2023-02",
+          "title": "Senior Website Developer"
+        },
+        {
+          "company": "Upwork, Fiverr & Direct Clients",
+          "description": "Delivered 100+ custom WordPress websites, landing pages, and WooCommerce stores with integrated on-page SEO optimization. Achieved Top Rated status on Upwork and Level 2 Seller status on Fiverr, maintaining a 4.9/5 satisfaction rating across 20+ active clients. Managed projects end to end.",
+          "employmentType": "Freelance",
+          "endDate": "2023-01",
+          "location": "Remote",
+          "startDate": "2020-01",
+          "title": "Freelance WordPress Developer & SEO Specialist"
+        },
+        {
+          "company": "Hawk ITs & Consultancy",
+          "description": "Developed responsive web applications using React.js, jQuery, and AJAX. Collaborated with designers and backend developers to build and maintain layouts matching approved designs and using live server data.",
+          "employmentType": "Full-time",
+          "endDate": "2020-01",
+          "location": "Sahiwal, Pakistan",
+          "startDate": "2019-01",
+          "title": "Front-End Developer"
+        },
+        {
+          "company": "AWSOL",
+          "description": "Built responsive web applications with HTML5, CSS3, JavaScript, Bootstrap, and React.js during a paid internship. Developed reusable React components and collaborated with engineers to resolve UI bugs and improve consistency.",
+          "employmentType": "Internship",
+          "endDate": "2018-06",
+          "location": "Lahore, Pakistan",
+          "startDate": "2018-01",
+          "title": "Front-End Developer Intern"
+        }
+      ],
+      "id": "ayoub-wp-1794144954284",
+      "label": "Ayoub WP Developer",
+      "links": {
+        "behance": "",
+        "dribbble": "dribble.com/ayoubkhan558",
+        "facebook": "facebook.com/ayoubkhan558",
+        "github": "ayoubkhan558",
+        "linkedin": "linkedin.com/in/ayoubkhan558",
+        "medium": "",
+        "portfolio": "ayoubkhan.vercel.app",
+        "stackoverflow": "stackoverflow.com/ayoubkhan558",
+        "twitter": "x.com/ayoubkhan558",
+        "website": "ayoubkhan.vercel.app"
+      },
+      "personal": {
+        "alternateEmail": "ayoubkhan558@hotmail.com",
+        "cnic": "33106-3691649-3",
+        "dateOfBirth": "1996-10-18",
+        "disabilityStatus": "",
+        "email": "mayoubkhan558@gmail.com",
+        "emergencyContactName": "Khuda Yar",
+        "emergencyContactPhone": "03308922558",
+        "ethnicity": "Asian",
+        "firstName": "Muhammad",
+        "gender": "Male",
+        "lastName": "Ayoub",
+        "maritalStatus": "Single",
+        "middleName": "",
+        "nationality": "Pakistani",
+        "phone": "+923347812124",
+        "preferredName": "Ayoub",
+        "pronouns": "",
+        "username": "ayoubkhan558",
+        "veteranStatus": "",
+        "whatsapp": "+923347812124"
+      },
+      "professional": {
+        "achievements": "Achieved Top Rated status on Upwork and Level 2 Seller status on Fiverr with a 4.9/5 satisfaction rating; built Brickify reducing manual front-end development time by 60%; achieved 99 desktop PageSpeed score on Weinberger Aesthetics.",
+        "availabilityForInterview": "",
+        "availableStartDate": "Immediate",
+        "careerObjective": "Build responsive, accessible, high-performance web applications and custom WordPress solutions using React, Next.js, Bricks Builder, ACF Pro, and technical SEO.",
+        "coverLetter": "",
+        "currentCompany": "",
+        "currentSalary": "115K PKR",
+        "currentTitle": "Senior WordPress, SEO & Full-Stack Developer",
+        "cvUrl": "",
+        "desiredJobType": "Full-time",
+        "desiredSalary": "1500 USD",
+        "employmentStatus": "Freelance",
+        "expectedJoiningDate": "",
+        "experienceYears": "8",
+        "frontendExperienceYears": "8",
+        "languages": [
+          "English",
+          "Urdu"
+        ],
+        "lastDrawnSalary": "500 USD",
+        "linkedinHeadline": "Senior WordPress, SEO & Full-Stack Developer",
+        "managementExperience": "Led 4 front-end developers at Epicsols",
+        "minimumExpectedSalary": "1000 USD",
+        "needsSponsorship": "No",
+        "noticePeriod": "Immediately",
+        "openToContract": "Yes",
+        "openToFreelance": "Yes",
+        "portfolioSummary": "Custom personal engineering portfolio built with Next.js deployed at ayoubkhan.vercel.app, featuring tools like Brickify and live client implementations.",
+        "preferredLocations": "Remote, United Arab Emirates, United Kingdom, United States, Qatar, Australia",
+        "preferredSalaryRange": "500 USD - 1500 USD",
+        "preferredTeams": "",
+        "preferredWorkMode": "Remote",
+        "reactExperienceYears": "8",
+        "reasonForLeaving": "",
+        "references": "",
+        "remotePreference": "Remote",
+        "resumeUrl": "",
+        "salaryCurrency": "USD",
+        "salaryNegotiable": "Yes",
+        "securityClearance": "",
+        "shopifyExperienceYears": "3",
+        "skills": "WordPress, Bricks Builder, Elementor Pro, Etch Builder, Divi, Avada Builder, Breakdance, Oxygen Builder, Webflow, ACF Pro, Custom Post Types, Custom Taxonomies, Gutenberg Blocks, Theme Development, Child Themes, WordPress Hooks & Filters, LMS Integration, WooCommerce, Shopify, Stripe API, PayPal API, HTML5, CSS3, JavaScript (ES2024), TypeScript, React.js, Next.js (App Router), jQuery, Tailwind CSS, Bootstrap, Material UI, Sass/SCSS, GSAP, WordPress REST API, MySQL, Technical SEO, On-Page SEO, Rank Math, Yoast SEO, Schema Markup, Core Web Vitals, WebP, Caching, Figma-to-Code, Cross-Browser QA",
+        "summary": "Self-taught developer with 8 years of combined experience (5 corporate and 3 freelance), active since 2018. Builds responsive web applications and custom WordPress solutions using Bricks Builder, ACF Pro, React, and Next.js, with expertise in WooCommerce, technical SEO, and Figma-to-code implementation.",
+        "timezone": "PKT",
+        "tools": [
+          "Git",
+          "GitHub",
+          "Vercel",
+          "Figma",
+          "Adobe XD",
+          "Postman",
+          "VS Code",
+          "Rank Math",
+          "Yoast SEO",
+          "MySQL"
+        ],
+        "totalExperienceMonths": "96",
+        "upworkUrl": "https://www.upwork.com",
+        "whyJoinCompany": "",
+        "willingToRelocate": "Yes",
+        "wordpressExperienceYears": "8",
+        "workAuthorization": ""
+      },
+      "profileNotes": {
+        "conflictsResolved": [
+          "Name updated to Muhammad Ayoub from CV; existing middle/last names differed",
+          "MCS GPA corrected from 3.5 to 3.32",
+          "Xgrid and Epicsols job titles aligned with CV"
+        ],
+        "primarySource": "CV updated October 25, 2026",
+        "requiresConfirmation": [
+          "Existing JSON date of birth, CNIC, full address, marital status, and other personal fields are not verified by CV",
+          "Brickify 60% time-saving claim and other JSON-only projects are not listed in CV",
+          "React, WordPress, and Shopify-specific experience year counts were retained from JSON and not independently validated",
+          "Current employment status, availability, sponsorship, relocation and salary preferences are not confirmed by CV",
+          "Existing JSON has a generic Upwork URL rather than a verified profile URL"
+        ],
+        "supplementarySource": "Existing user-provided JSON profile"
+      },
       "projects": [
         {
-          "name": "",
-          "role": "",
-          "description": "",
-          "technologies": [],
-          "url": "",
-          "github": "",
-          "startDate": "",
-          "endDate": ""
-        }
-      ],
-      "certifications": [
-        {
-          "name": "",
-          "issuer": "",
-          "issueDate": "",
-          "expiryDate": "",
-          "credentialId": "",
-          "credentialUrl": ""
-        }
-      ],
-      "awards": [
-        {
-          "title": "",
-          "issuer": "",
-          "date": "",
-          "description": ""
-        }
-      ],
-      "volunteering": [
-        {
-          "organization": "",
-          "role": "",
-          "startDate": "",
+          "description": "Corporate website for Xgrid's cloud infrastructure and technology services, built with Next.js.",
           "endDate": "",
-          "description": ""
+          "github": "",
+          "name": "Xgrid Corporate Website",
+          "role": "Front-End Developer",
+          "startDate": "",
+          "technologies": [
+            "Next.js",
+            "React.js"
+          ],
+          "url": "https://xgrid.co"
+        },
+        {
+          "description": "Rebuilt a premium aesthetic surgery clinic site from Figma into Bricks Builder, replacing an older Neve + Live Composer stack. Achieved 99 desktop PageSpeed, ~35% better performance, and ~20% more conversions.",
+          "endDate": "",
+          "github": "",
+          "name": "Weinberger Aesthetics",
+          "role": "Lead Developer",
+          "startDate": "",
+          "technologies": [
+            "WordPress",
+            "Bricks Builder",
+            "Figma"
+          ],
+          "url": ""
+        },
+        {
+          "description": "Migrated a legacy PHP/MySQL sharpening-service website to WordPress and Bricks Builder following a Figma redesign, creating a maintainable CMS foundation at Xgrid.co.",
+          "endDate": "",
+          "github": "",
+          "name": "Rejuvenated Knives",
+          "role": "Developer",
+          "startDate": "",
+          "technologies": [
+            "PHP",
+            "MySQL",
+            "WordPress",
+            "Bricks Builder",
+            "Figma"
+          ],
+          "url": ""
+        },
+        {
+          "description": "Designed and built professional legal service pages using custom WordPress architecture, accessibility considerations, fast loading, and conversion pathways for client intake.",
+          "endDate": "",
+          "github": "",
+          "name": "Pagano Law Platform Website",
+          "role": "Developer",
+          "startDate": "",
+          "technologies": [
+            "WordPress"
+          ],
+          "url": ""
+        },
+        {
+          "description": "Built a service website with clearer page structure to help visitors understand the offering.",
+          "endDate": "",
+          "github": "",
+          "name": "Carptrac",
+          "role": "Developer",
+          "startDate": "",
+          "technologies": [
+            "Web Development"
+          ],
+          "url": "https://carptrac.com.fj"
+        },
+        {
+          "description": "Full-featured interactive web platform engineered with React.js, Bootstrap, and dynamic API integrations.",
+          "endDate": "",
+          "github": "",
+          "name": "Robux Gold",
+          "role": "Front-End Developer",
+          "startDate": "",
+          "technologies": [
+            "React.js",
+            "Bootstrap",
+            "REST APIs"
+          ],
+          "url": "https://ro.gold"
+        },
+        {
+          "description": "High-speed marketing platform built with semantic HTML5, Bootstrap, and SEO best practices for rapid indexing.",
+          "endDate": "",
+          "github": "",
+          "name": "BabyPNG",
+          "role": "Developer",
+          "startDate": "",
+          "technologies": [
+            "HTML5",
+            "Bootstrap",
+            "Technical SEO"
+          ],
+          "url": "https://babypng.com"
+        },
+        {
+          "description": "Internal developer tool that parses HTML/CSS/JS and maps content to Bricks Builder JSON architecture, reducing manual page construction time by 60%.",
+          "endDate": "",
+          "github": "",
+          "name": "Brickify (React 19)",
+          "role": "Creator & Developer",
+          "startDate": "",
+          "technologies": [
+            "React 19",
+            "HTML",
+            "CSS",
+            "JavaScript",
+            "Bricks Builder JSON"
+          ],
+          "url": "https://brickify.netlify.app"
         }
       ],
-      "customFields": [
-        {
-          "label": "",
-          "match": "",
-          "value": ""
-        }
-      ]
+      "volunteering": []
     }
-  ]
+  ],
+  "version": 2
 }

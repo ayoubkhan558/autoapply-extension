@@ -159,6 +159,7 @@ async function init() {
 
   document.getElementById("exportBtn").addEventListener("click", function () {
     collectForm();
+    setStatus("Export contains profile data only; attachments are not included.", "success");
     const blob = new Blob([JSON.stringify(DATA, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -174,20 +175,28 @@ async function init() {
     const reader = new FileReader();
     reader.onload = function () {
       try {
-        const parsed = JSON.parse(reader.result);
-        if (!parsed || !Array.isArray(parsed.profiles) || !parsed.profiles.length) {
-          throw new Error("Not an AutoApply profile export.");
+        const parsed = aaValidateProfileData(JSON.parse(reader.result));
+        collectForm();
+        const merge = confirm("Import " + parsed.profiles.length + " profile(s). OK merges by profile ID; Cancel offers replacement.");
+        if (merge) {
+          const byId = new Map(DATA.profiles.map(function (p) { return [p.id, p]; }));
+          parsed.profiles.forEach(function (p) { byId.set(p.id, p); });
+          DATA.profiles = Array.from(byId.values());
+        } else {
+          if (!confirm("Replace all " + DATA.profiles.length + " current profile(s)? Attachments are not included in this import.")) return;
+          DATA = parsed;
         }
-        DATA = aaMigrate(parsed);
+        PENDING_CV_FILE = PENDING_PHOTO_FILE = PENDING_COVER_LETTER_FILE = null;
         renderProfiles();
         renderForm();
         renderRaw();
         setStatus("Imported \u2014 remember to Save", "success");
       } catch (err) {
-        setStatus((err && err.message && /profile export/.test(err.message)) ? err.message : "Invalid JSON file", "error");
+        setStatus("Import failed: " + err.message, "error");
       }
     };
     reader.readAsText(file);
+    e.target.value = "";
   });
 
   document.getElementById("toggleRaw").addEventListener("click", function () {

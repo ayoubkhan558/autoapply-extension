@@ -88,16 +88,6 @@
       "all_frames": true
     }
   ],
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "data/profile.default.json"
-      ],
-      "matches": [
-        "<all_urls>"
-      ]
-    }
-  ],
   "commands": {
     "fill-form": {
       "suggested_key": {

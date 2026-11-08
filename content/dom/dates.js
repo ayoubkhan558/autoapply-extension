@@ -24,6 +24,7 @@ function parseDateParts(value) {
   if (m) return { y: Number(m[1]), mo: Number(m[2]), d: Number(m[3]) };
   m = v.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})$/);
   if (m) return { y: Number(m[3]), mo: Number(m[1]), d: Number(m[2]) };
+  if (/^\d{4}[-/]\d{1,2}$/.test(v) || /^\d{1,2}[-/]\d{4}$/.test(v) || /^\d{4}$/.test(v)) return null;
   const dt = new Date(v);
   if (!isNaN(dt.getTime())) return { y: dt.getFullYear(), mo: dt.getMonth() + 1, d: dt.getDate() };
   return null;
@@ -52,16 +53,28 @@ function detectDatePattern(el, sig) {
 
 function isDateField(el, sig) {
   const t = (el.type || "").toLowerCase();
-  if (t === "date") return true;
+  if (t === "date" || t === "month") return true;
   if (t === "number" || t === "email" || t === "tel" || t === "url") return false;
   const hay = (((sig && sig.text) || "") + " " + ((sig && sig.attr) || "") + " " + (el.placeholder || "")).toLowerCase();
   return /date of birth|\bdob\b|birth|\bdate\b|mm\/dd|dd\/mm|dd-mm|mm-dd|yyyy/.test(hay);
 }
 
 function normalizeDate(el, sig, value) {
+  const type = (el.type || "").toLowerCase();
+  const month = String(value).trim().match(/^(?:(\d{4})[-/](\d{1,2})|(\d{1,2})[-/](\d{4}))$/);
+  if (month) {
+    const year = month[1] || month[4], mo = Number(month[2] || month[3]);
+    if (mo < 1 || mo > 12) return value;
+    if (type === "month") return year + "-" + pad2(mo);
+    if (type === "date") return "";
+    const hint = ((el.placeholder || "") + " " + (el.getAttribute("date-format") || "")).toLowerCase();
+    if (/mm[/. -]yyyy/.test(hint)) return pad2(mo) + (hint.includes("-") ? "-" : "/") + year;
+    return value;
+  }
   const parts = parseDateParts(value);
   if (!parts) return value;
-  if ((el.type || "").toLowerCase() === "date") return formatDate(parts, "iso", "-");
+  if (type === "month") return String(parts.y) + "-" + pad2(parts.mo);
+  if (type === "date") return formatDate(parts, "iso", "-");
   const pat = detectDatePattern(el, sig);
   if (!pat) return value;
   return formatDate(parts, pat.order, pat.sep);
