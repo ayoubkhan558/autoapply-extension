@@ -12,6 +12,7 @@ function aaSendMessage(msg) {
 function aaMergeObj(target, src) {
   if (!src) return;
   Object.keys(src).forEach(function (k) {
+    if (k === "__proto__" || k === "constructor" || k === "prototype") return;
     const v = src[k];
     if (v !== null && v !== undefined && String(v).trim() !== "") target[k] = String(v);
   });
@@ -105,8 +106,17 @@ async function aaImportCvIntoProfile(prof, file, stored, onStatus) {
   status("Asking " + provider + " to extract fields\u2026", "");
   const resp = await aaSendMessage({ action: "aa-parse-resume", payload: payload });
   if (!resp || !resp.ok) throw new Error((resp && resp.error) || "No response from AI.");
+  const parsed = resp.data;
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("AI returned an invalid profile.");
+  ["personal", "address", "links", "professional"].forEach(function (key) {
+    if (parsed[key] !== undefined && (!parsed[key] || typeof parsed[key] !== "object" || Array.isArray(parsed[key]) || Object.values(parsed[key]).some(function (v) { return typeof v !== "string"; }))) throw new Error("AI returned invalid " + key + " fields.");
+  });
+  ["experience", "education"].forEach(function (key) {
+    if (parsed[key] !== undefined && (!Array.isArray(parsed[key]) || parsed[key].some(function (v) { return !v || typeof v !== "object" || Array.isArray(v) || Object.values(v).some(function (x) { return typeof x !== "string"; }); }))) throw new Error("AI returned invalid " + key + " entries.");
+  });
+  if (!confirm("Review the extracted data below. Apply it to this profile? Existing experience and education entries may be replaced.\n\n" + JSON.stringify(parsed, null, 2))) return false;
   aaMergeIntoProfile(prof, base);
-  aaMergeIntoProfile(prof, resp.data);
+  aaMergeIntoProfile(prof, parsed);
   if (text && text.length >= 20 && stored && prof.id) {
     await aaSetResume(prof.id, Object.assign({}, stored, { text: text, ts: Date.now() }));
   }
@@ -123,6 +133,7 @@ async function newProfileFromCv(file) {
     aaEnsureProfileFields(prof);
     aaRepeaterGroups().forEach(function (g) { prof[g.key] = []; });
     prof.customFields = [];
+    PENDING_CV_FILE = PENDING_PHOTO_FILE = PENDING_COVER_LETTER_FILE = null;
     DATA.profiles.push(prof);
     DATA.activeProfileId = id;
 
@@ -132,7 +143,7 @@ async function newProfileFromCv(file) {
     const stored = { name: file.name, type: file.type, dataUrl: dataUrl, text: text, ts: Date.now() };
     await aaSetResume(id, stored);
 
-    await aaImportCvIntoProfile(prof, file, stored, setAiImportStatus);
+    const imported = await aaImportCvIntoProfile(prof, file, stored, setAiImportStatus);
     await aaSaveData(DATA);
     PENDING_CV_FILE = null;
     PENDING_PHOTO_FILE = null;
@@ -140,7 +151,7 @@ async function newProfileFromCv(file) {
     renderProfiles();
     renderForm();
     renderRaw();
-    setAiImportStatus("Profile created from CV — review the fields.", "success");
+    setAiImportStatus(imported ? "Profile created from CV — review the fields." : "Profile created without applying extracted fields.", "success");
   } catch (err) {
     setAiImportStatus(String((err && err.message) || err), "error");
   }

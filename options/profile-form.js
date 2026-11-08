@@ -3,6 +3,8 @@
 function renderForm() {
   const prof = activeProfile();
   const form = document.getElementById("profileForm");
+  const selected = form.querySelector(".aa-profile-field-panel.aa-is-active");
+  const selectedId = selected ? selected.dataset.panel : "profile";
   form.innerHTML = "";
 
   const layout = document.createElement("div");
@@ -14,6 +16,7 @@ function renderForm() {
   layout.appendChild(nav); layout.appendChild(panels);
 
   function addLeftTab(id, label, build, active) {
+    active = id === selectedId;
     const btn = document.createElement("button");
     btn.type = "button"; btn.className = "aa-profile-field-tab" + (active ? " aa-is-active" : "");
     const ic = document.createElement("span"); ic.className = "aa-profile-field-tab__icon"; ic.innerHTML = AA_TAB_ICONS[id] || AA_TAB_ICONS._default;

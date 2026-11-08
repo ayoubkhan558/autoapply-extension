@@ -15,8 +15,31 @@ global.chrome = {
 vm.runInThisContext(fs.readFileSync("lib/fields.js", "utf8"));
 vm.runInThisContext(fs.readFileSync("lib/matcher.js", "utf8"));
 vm.runInThisContext(fs.readFileSync("lib/storage.js", "utf8"));
+vm.runInThisContext(fs.readFileSync("content/dom/dates.js", "utf8"));
+vm.runInThisContext(fs.readFileSync("content/dom/currency.js", "utf8"));
+global.norm = function (s) { return String(s || "").toLowerCase().trim(); };
+assert.equal(normalizeCurrency({type:"number", placeholder:""}, {text:"annual salary USD", salaryCurrency:"PKR"}, "100000"), "");
+assert.equal(normalizeCurrency({type:"number", placeholder:""}, {text:"annual salary USD", salaryCurrency:"USD"}, "5000 monthly"), "60000");
+vm.runInThisContext(fs.readFileSync("lib/ai/provider.js", "utf8"));
+assert.throws(() => aaParseJsonLoose('{"personal":{"firstName":"unfinished'));
+const dateEl = {type:"date", placeholder:"", getAttribute: () => ""};
+const monthEl = {type:"month", placeholder:"", getAttribute: () => ""};
+assert.equal(normalizeDate(monthEl, {}, "10/2024"), "2024-10");
+assert.equal(normalizeDate(dateEl, {}, "10/2024"), "");
+assert.equal(normalizeDate(dateEl, {}, "1996-10-04"), "1996-10-04");
 
 (async function () {
+  const valid = { activeProfileId: "a", profiles: [{ id: "a", personal: { email: "a@example.com" } }] };
+  assert.equal(aaValidateProfileData(valid).profiles[0].id, "a");
+  [{}, { activeProfileId: "x", profiles: [{id:"a"}] }, { activeProfileId:"a", profiles:[{id:"a"}, {id:"a"}] }, {activeProfileId:"a", profiles:[null]}, {activeProfileId:"a", profiles:[{id:"a", personal: []}]}].forEach(v => assert.throws(() => aaValidateProfileData(v)));
+  store.autoapplyResumes = { old: { name: "legacy.pdf" } };
+  assert.equal((await aaGetResume("old")).name, "legacy.pdf");
+  await Promise.all([aaSetResume("a", {name:"a.pdf"}), aaSetResume("b", {name:"b.pdf"})]);
+  assert.equal((await aaGetResume("a")).name, "a.pdf");
+  assert.equal((await aaGetResume("b")).name, "b.pdf");
+  await aaRemoveResume("old");
+  assert.equal(await aaGetResume("old"), null);
+
   // Shared default blocklist exists and is hostname-safe (no URL paths).
   assert(Array.isArray(AA_DEFAULT_BLOCKED_SITES) && AA_DEFAULT_BLOCKED_SITES.length > 0);
   assert(AA_DEFAULT_BLOCKED_SITES.every((h) => !h.includes("/")), "blocklist entries must be hostnames");

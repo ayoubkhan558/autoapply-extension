@@ -54,6 +54,24 @@ const root = path.resolve(__dirname, '..');
     assert.equal(await page.locator('#profileSelect').inputValue(), 'smoke');
     assert((await page.locator('#profileForm input').count()) > 20);
     assert.equal(await page.evaluate(() => document.styleSheets.length), modules.optionsCss.length);
+    await page.evaluate(() => {
+      activeProfile().experience = [{title: 'First', startDate: '10/2024', endDate: '07/2026'}, {title: 'Second'}];
+      renderForm();
+    });
+    await page.getByRole('button', {name: 'Experience', exact: true}).click();
+    assert.equal(await page.locator('[data-rep="experience"][data-field="startDate"]').first().getAttribute('type'), 'month');
+    await page.locator('[data-panel="experience"] details').last().getByRole('button', {name: 'Move up'}).click();
+    assert.equal(await page.evaluate(() => activeProfile().experience[0].title), 'Second');
+    await page.evaluate(() => {
+      const email = document.querySelector('[data-field="email"]'); email.value = 'invalid';
+      if (validateProfileForm()) throw new Error('Invalid email accepted');
+      email.value = 'smoke@example.test';
+      const end = document.querySelector('[data-rep="experience"][data-index="1"][data-field="endDate"]');
+      end.value = '2020-01';
+      if (validateProfileForm()) throw new Error('Reversed dates accepted');
+      end.value = '2026-07';
+      if (!validateProfileForm()) throw new Error('Valid form rejected');
+    });
     await page.locator('#saveBtn').click();
     await page.waitForFunction(() => document.querySelector('#status').textContent.includes('Saved'));
     await page.locator('.aa-nav-item[data-tab="detection"]').click();

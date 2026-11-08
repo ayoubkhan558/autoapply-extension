@@ -1,30 +1,32 @@
 // Saving and synchronized form/raw JSON editing.
 // Classic-script module; dependency order is declared in config/modules.json.
 async function save() {
+  if (!validateProfileForm()) return;
   const saveBtn = document.getElementById("saveBtn");
-  if (saveBtn) { saveBtn.disabled = true; saveBtn.dataset.originalText = saveBtn.dataset.originalText || saveBtn.textContent; saveBtn.textContent = "Saving…"; }
+  if (saveBtn.disabled) return;
+  const original = saveBtn.textContent;
+  saveBtn.disabled = true; saveBtn.textContent = "Saving…";
   collectForm();
-  if (PENDING_CV_FILE) {
-    const dataUrl = await aaFileToDataUrl(PENDING_CV_FILE);
-    let cvText = "";
-    try { cvText = await aaExtractText(PENDING_CV_FILE); } catch (e) { /* ignore */ }
-    await aaSetResume(DATA.activeProfileId, { name: PENDING_CV_FILE.name, type: PENDING_CV_FILE.type, dataUrl: dataUrl, text: cvText, ts: Date.now() });
-    PENDING_CV_FILE = null;
-  }
-  if (PENDING_COVER_LETTER_FILE) {
-    const clUrl = await aaFileToDataUrl(PENDING_COVER_LETTER_FILE);
-    await aaSetCoverLetter(DATA.activeProfileId, { name: PENDING_COVER_LETTER_FILE.name, type: PENDING_COVER_LETTER_FILE.type, dataUrl: clUrl, ts: Date.now() });
-    PENDING_COVER_LETTER_FILE = null;
-  }
-  if (PENDING_PHOTO_FILE) {
-    const photoUrl = await aaFileToDataUrl(PENDING_PHOTO_FILE);
-    await aaSetPhoto(DATA.activeProfileId, { name: PENDING_PHOTO_FILE.name, type: PENDING_PHOTO_FILE.type, dataUrl: photoUrl, ts: Date.now() });
-    PENDING_PHOTO_FILE = null;
-  }
-  await aaSaveData(DATA);
-  renderRaw();
-  setStatus("Saved ✓", "success");
-  if (saveBtn) { saveBtn.textContent = "Saved ✓"; setTimeout(function(){ saveBtn.disabled = false; saveBtn.textContent = saveBtn.dataset.originalText || "Save profile"; }, 1400); }
+  const id = DATA.activeProfileId;
+  const snapshot = JSON.parse(JSON.stringify(DATA));
+  const cv = PENDING_CV_FILE, photo = PENDING_PHOTO_FILE, cover = PENDING_COVER_LETTER_FILE;
+  try {
+    const updates = { [STORAGE_KEY]: snapshot };
+    if (cv) {
+      const dataUrl = await aaFileToDataUrl(cv);
+      let text = ""; try { text = await aaExtractText(cv); } catch (e) { /* File is still usable for upload. */ }
+      updates[aaAttachmentKey(AA_RESUMES_KEY, id)] = { name: cv.name, type: cv.type, dataUrl: dataUrl, text: text, ts: Date.now() };
+    }
+    if (photo) updates[aaAttachmentKey(AA_PHOTOS_KEY, id)] = { name: photo.name, type: photo.type, dataUrl: await aaFileToDataUrl(photo), ts: Date.now() };
+    if (cover) updates[aaAttachmentKey(AA_COVER_LETTERS_KEY, id)] = { name: cover.name, type: cover.type, dataUrl: await aaFileToDataUrl(cover), ts: Date.now() };
+    await chrome.storage.local.set(updates);
+    if (PENDING_CV_FILE === cv) PENDING_CV_FILE = null;
+    if (PENDING_PHOTO_FILE === photo) PENDING_PHOTO_FILE = null;
+    if (PENDING_COVER_LETTER_FILE === cover) PENDING_COVER_LETTER_FILE = null;
+    renderRaw(); setStatus("Saved ✓", "success");
+  } catch (err) { setStatus("Save failed: " + (err.message || err) + ". Your changes are still open; try again.", "error"); }
+  finally { saveBtn.disabled = false; saveBtn.textContent = original; }
+
 }
 
 // Live: fields -> JSON (+ profile dropdown when label changes)
@@ -43,12 +45,13 @@ function onRawInput() {
     const ta = document.getElementById("rawJson");
     let parsed;
     try {
-      parsed = JSON.parse(ta.value);
+      parsed = aaValidateProfileData(JSON.parse(ta.value));
     } catch (err) {
       setRawStatus("Invalid JSON \u2014 will restore on blur", "error");
       return;
     }
-    DATA = aaMigrate(parsed);
+    if (DATA.activeProfileId !== parsed.activeProfileId) PENDING_CV_FILE = PENDING_PHOTO_FILE = PENDING_COVER_LETTER_FILE = null;
+    DATA = parsed;
     lastGoodJson = JSON.stringify(DATA, null, 2);
     renderProfiles();
     renderForm();
@@ -61,13 +64,14 @@ function onRawBlur() {
   const ta = document.getElementById("rawJson");
   let parsed;
   try {
-    parsed = JSON.parse(ta.value);
+    parsed = aaValidateProfileData(JSON.parse(ta.value));
   } catch (err) {
     ta.value = lastGoodJson;
     setRawStatus("Restored last working JSON", "error");
     return;
   }
-  DATA = aaMigrate(parsed);
+  if (DATA.activeProfileId !== parsed.activeProfileId) PENDING_CV_FILE = PENDING_PHOTO_FILE = PENDING_COVER_LETTER_FILE = null;
+  DATA = parsed;
   renderProfiles();
   renderForm();
   renderRaw();
