@@ -160,3 +160,8 @@
   .aa-ext-options .aa-save-toast { transition: opacity 1ms linear; transform: none; }
   .aa-ext-options .aa-completeness__fill { transition: none; }
 }
+
+.aa-ext-options summary.aa-entry-card__head { cursor: pointer; display: list-item; overflow-wrap: anywhere; }
+.aa-ext-options .aa-entry-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.aa-ext-options details:not([open]) > summary { margin-bottom: 0; }
+.aa-ext-options summary:focus-visible { outline: 2px solid var(--aa-link); outline-offset: 4px; }

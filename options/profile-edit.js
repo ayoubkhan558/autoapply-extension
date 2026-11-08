@@ -94,3 +94,36 @@ function renderRaw() {
   if (ta) ta.value = txt;
   lastGoodJson = txt;
 }
+
+function moveRepeaterEntry(key, idx, direction) {
+  collectForm();
+  const entries = activeProfile()[key];
+  const target = idx + direction;
+  if (target < 0 || target >= entries.length) return;
+  entries.splice(target, 0, entries.splice(idx, 1)[0]);
+  renderForm(); renderRaw();
+  const cards = document.querySelector('[data-panel="' + key + '"]').querySelectorAll("details");
+  cards[target].open = true;
+  cards[target].querySelector("summary").focus();
+}
+
+function validateProfileForm() {
+  const form = document.getElementById("profileForm");
+  form.querySelectorAll("[data-field]").forEach(function (input) { input.setCustomValidity(""); });
+  form.querySelectorAll(".aa-entry-card").forEach(function (card) {
+    [["startDate", "endDate"], ["startYear", "endYear"], ["issueDate", "expiryDate"]].forEach(function (pair) {
+      const start = card.querySelector('[data-field="' + pair[0] + '"]');
+      const end = card.querySelector('[data-field="' + pair[1] + '"]');
+      if (start && end && start.value && end.value && /^\d{4}/.test(start.value) && /^\d{4}/.test(end.value) && end.value < start.value) end.setCustomValidity("End must be on or after start.");
+    });
+  });
+  const invalid = Array.from(form.querySelectorAll("input, textarea, select")).find(function (input) { return !input.checkValidity(); });
+  if (!invalid) return true;
+  const panel = invalid.closest("[data-panel]");
+  const panels = Array.from(form.querySelectorAll("[data-panel]"));
+  form.querySelectorAll(".aa-profile-field-tab")[panels.indexOf(panel)].click();
+  const card = invalid.closest("details"); if (card) card.open = true;
+  invalid.reportValidity(); invalid.focus();
+  setStatus("Please correct the highlighted field before saving.", "error");
+  return false;
+}

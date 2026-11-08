@@ -44,9 +44,10 @@ function fillTextLike(el, value) {
     if (num === "" || isNaN(Number(num))) return false;
     v = num;
   }
+  if (!v) return false;
   if (el.isContentEditable) setRichTextValue(el, v);
   else { try { el.focus(); } catch (e) { /* ignore */ } setNativeValue(el, v); fireEvents(el); }
-  return true;
+  return el.isContentEditable || el.value === v;
 }
 
 // Commit a <select> choice through the native value setter so framework
